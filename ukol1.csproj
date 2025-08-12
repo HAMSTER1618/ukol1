@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="bin\Debug\net8.0-windows\Scripts\**" />
+    <EmbeddedResource Remove="bin\Debug\net8.0-windows\Scripts\**" />
+    <None Remove="bin\Debug\net8.0-windows\Scripts\**" />
+    <Page Remove="bin\Debug\net8.0-windows\Scripts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="init_db.sql" />
+    <None Remove="run_init_db.bat" />
+    <None Remove="Scripts\init_db.sql" />
+    <None Remove="Scripts\run_init_db.bat" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Scripts\init_db.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\run_init_db.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="10.3.3" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="bin\Debug\net8.0-windows\" />
+  </ItemGroup>
+
+</Project>

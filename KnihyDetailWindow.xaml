@@ -1,0 +1,91 @@
+﻿<Window x:Class="ukol1.KnihyDetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ukol1"
+        mc:Ignorable="d"
+        Title="Detail Knihy" Height="450" Width="800"
+        Background="#F2F2F2">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#C9A99A" />
+        <SolidColorBrush x:Key="PanelBg" Color="#FFF5E1" />
+        <SolidColorBrush x:Key="GroupBg" Color="#FFFFFF" />
+        <!--<SolidColorBrush x:Key="HeaderFG" Color="White" />-->
+        <SolidColorBrush x:Key="TextOnPanel" Color="#5E2A2B" />
+
+        <Style TargetType="GroupBox">
+            <Setter Property="Background" Value="{StaticResource GroupBg}" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+        </Style>
+    </Window.Resources>
+
+    <ScrollViewer>
+        <Grid Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!--picture for book-->
+            <Border Grid.Row="0" Grid.Column="0"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    Background ="{StaticResource PanelBg}"  BorderThickness="2"
+                    Width="200" Height="300" Margin="0,0,10,10">
+                <Image x:Name="CoverImage" Stretch="Uniform" />
+            </Border>
+
+            <!--autor, popis,rok,nakladatel...-->
+            <Border Grid.Row="0" Grid.Column="1" Margin="0,0,0,10"
+                    Background="{StaticResource AccentBrush}"
+                    Padding="10">
+                <StackPanel>
+                    <!--name-->
+                    <TextBlock Grid.Row="0" Grid.Column="1"
+                        x:Name="NazevText"
+                        FontSize="25" FontWeight="Bold"
+                        Foreground="{StaticResource TextOnPanel}"
+                        TextWrapping="Wrap" Margin="0,0,0,10" />
+                    <StackPanel>
+                        <TextBlock Foreground="{StaticResource TextOnPanel}">
+                            <Run Text="Autor: " />
+                            <Run x:Name="AutorText" FontWeight="SemiBold" />
+                        </TextBlock>
+
+                        <TextBlock Foreground="{StaticResource TextOnPanel}">
+                            <Run Text="Nakladatel: " />
+                            <Run x:Name="NakladatelText" FontWeight="SemiBold" />
+                        </TextBlock>
+
+                        <TextBlock Foreground="{StaticResource TextOnPanel}">
+                            <Run Text="Rok vydani: " />
+                            <Run x:Name="RokText" FontWeight="SemiBold" />
+                            <Run Text=" | Pocet stran: " />
+                            <Run x:Name="PocetStranText" FontWeight="SemiBold" />
+                        </TextBlock>
+
+                        <TextBlock Foreground="{StaticResource TextOnPanel}">
+                            <Run Text="Zanry " />
+                            <Run x:Name="GenresText" FontWeight="SemiBold" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <GroupBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Header="Popis knihy">
+                <TextBlock x:Name="PopisText"
+               TextWrapping="Wrap"
+               Margin="0" Background="{StaticResource PanelBg}"
+                    Foreground="{StaticResource TextOnPanel}" />
+            </GroupBox>
+        </Grid>
+    </ScrollViewer>
+</Window>

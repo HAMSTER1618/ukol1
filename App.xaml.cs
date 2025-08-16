@@ -11,42 +11,70 @@ namespace ukol1
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            var dataDir = AppDomain.CurrentDomain.BaseDirectory;
-            AppDomain.CurrentDomain.SetData("DataDirectory", AppDomain.CurrentDomain.BaseDirectory);
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            AppDomain.CurrentDomain.SetData("DataDirectory", baseDir);
 
-            var scriptDir = Path.Combine(dataDir, "Scripts");
-            var dbFile = Path.Combine(scriptDir, "KNIHOVNA2.FDB");
+            var scriptDir = Path.Combine(baseDir, "Scripts");
+            var dbFile = Path.Combine(scriptDir, "KNIHOVNA2.fdb");
             var batFile = Path.Combine(scriptDir, "run_init_db.bat");
             var sqlFile = Path.Combine(scriptDir, "init_db.sql");
 
-            MessageBox.Show(
-                $"Script folder exists: {Directory.Exists(scriptDir)}\n" +
-                $"BAT exists: {File.Exists(batFile)}\n+" +
-                $"SQL exists:{File.Exists(dbFile)}", "Debug Paths"
-                );
+            //kontrola
+            if (!Directory.Exists(scriptDir))
+            {
+                MessageBox.Show($"Scripts folder not found:\n{scriptDir}",
+                    "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Shutdown();
+                return;
+            }
+            else if (!File.Exists(batFile))
+            {
+                MessageBox.Show($"Setup script missing (run_init_db.bat):\n{batFile}",
+                    "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Shutdown();
+                return;
+            }
+            else if (!File.Exists(sqlFile))
+            {
+                MessageBox.Show($"Schema file missing (init_db.sql):\n{sqlFile}",
+                    "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Shutdown();
+                return;
+            }
 
-            if (!File.Exists(dbFile) && File.Exists(batFile))
+            if (!File.Exists(dbFile))
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = batFile,
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"\"{batFile}\"\"",
                     WorkingDirectory = scriptDir,
-                    CreateNoWindow = true,
                     UseShellExecute = false,
+                    CreateNoWindow = true
                 };
-                var proc = Process.Start(psi);
-                if (proc != null)
+
+                using var proc = Process.Start(psi);
+                if (proc == null)
                 {
-                    proc.WaitForExit();  // чекаємо, поки батник відпрацює
-                    MessageBox.Show($"BAT ExitCode = {proc.ExitCode}", "Debug BAT");
+                    MessageBox.Show("Failed to start run_init_db.bat.",
+                        "Database init", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Application.Current.Shutdown();
+                    return;
                 }
-                else
+
+                proc.WaitForExit();
+
+                //kontrola udeleni BD
+                if (proc.ExitCode != 0 || !File.Exists(dbFile))
                 {
-                    MessageBox.Show("Не вдалося запустити setup_db.bat", "Debug BAT");
+                    MessageBox.Show($"Database initialization failed (exit code {proc.ExitCode}).",
+                        "Database init", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Application.Current.Shutdown();
+                    return;
                 }
             }
-            var main = new MainWindow();
-            main.Show();
+
+            new MainWindow().Show();
         }
     }
 }

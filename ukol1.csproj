@@ -16,6 +16,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Images\Book Lovers.png" />
+    <None Remove="Images\Daisy Jones &amp; The Six.png" />
+    <None Remove="Images\How to Stop Time.png" />
+    <None Remove="Images\It Ends With Us.png" />
+    <None Remove="Images\It Starts With Us.png" />
+    <None Remove="Images\Lessons in Chemistry.png" />
+    <None Remove="Images\Project Hail Mary.png" />
+    <None Remove="Images\The Midnight Library.png" />
+    <None Remove="Images\The Seven Husbands of Evelyn Hugo.png" />
+    <None Remove="Images\Verity.png" />
     <None Remove="init_db.sql" />
     <None Remove="run_init_db.bat" />
     <None Remove="Scripts\init_db.sql" />
@@ -23,11 +33,41 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Scripts\init_db.sql">
+    <Content Include="Images\Book Lovers.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Scripts\run_init_db.bat">
+    <Content Include="Images\Daisy Jones &amp; The Six.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\How to Stop Time.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\It Ends With Us.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\It Starts With Us.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Lessons in Chemistry.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Project Hail Mary.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\The Midnight Library.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\The Seven Husbands of Evelyn Hugo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Verity.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\init_db.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\run_init_db.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

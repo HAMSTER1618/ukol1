@@ -9,7 +9,7 @@
 
     <Window.Resources>
         <SolidColorBrush x:Key="KnihyTabBg" Color="#9D674D" />
-        <SolidColorBrush x:Key="AutoryTabBg" Color="#D1B091" />
+        <SolidColorBrush x:Key="AuthoryTabBg" Color="#D1B091" />
         <SolidColorBrush x:Key="NakladatelstviTabBg" Color="#6D6960" />
 
         <Style TargetType="DataGrid">
@@ -65,21 +65,54 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="TablKnihy"
+                    <DataGrid x:Name="TableBooks"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               CanUserAddRows="False"
-                              SelectionChanged="TablKnihy_SelectionChanged"
+                              SelectionChanged="TableBooks_SelectionChanged"
                               Grid.Row="0"
-                              MouseDoubleClick="TablKnihy_MouseDoubleClick"
-                              PreviewKeyDown="TablKnihy_PreviewKeyDown">
+
+                              PreviewKeyDown="TableBooks_PreviewKeyDown">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25" />
-                            <DataGridTextColumn Header="Nazev" Binding="{Binding NAZEV}" Width="250" />
-                            <DataGridTextColumn Header="Autor" Binding="{Binding AUTOR}" Width="2*" />
-                            <DataGridTextColumn Header="Nakladatelstvi" Binding="{Binding NAKLADATELSTVI}" Width="2*" />
-                            <DataGridTextColumn Header="Rok" Binding="{Binding ROK}" Width="*" />
-                            <DataGridTextColumn Header="Pocet Stran" Binding="{Binding POCETSTRAN}" Width="*" />
+                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTemplateColumn Header="Název" Width="250">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <Hyperlink Click="OpenBookLink_Click"
+                                                       Foreground="Black">
+                                                <Run Text="{Binding Nazev}" />
+                                            </Hyperlink>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Autor" Binding="{Binding Autor}" Width="2*" />
+                            <DataGridTextColumn Header="Nakladatelství" Binding="{Binding Nakladatelstvi}" Width="2*" />
+
+                            <DataGridTextColumn Header="Rok" Binding="{Binding Rok}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Počet stran" Binding="{Binding PocetStran}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
 
                         <DataGrid.ContextMenu>
@@ -93,15 +126,16 @@
                     <StackPanel Grid.Row="2"
                                 HorizontalAlignment="Center"
                                 Orientation="Horizontal"
-                                Margin="0,10,0,0">
+                                Margin="10,10,10,10">
                         <Button x:Name="BtnPridatKnihu"
-                                Content="Pridat Knihu"
-                                Width="100"
-                                Margin="5"
+                                Content="Přidat knihu"
+                                Width="100" Margin="5"
                                 Style="{StaticResource PrimaryButton}"
-                                Click="AddBook_Click"
-                                Foreground="AntiqueWhite" />
-                        <Button x:Name="BtnUpravitKnihu"
+                                Click="PridatKnihu_Click"
+                                Foreground="AntiqueWhite"
+                                Padding="100" FontSize="14" />
+
+                        <!--<Button x:Name="BtnUpravitKnihu"
                                 Content="Upravit Knihu"
                                 Width="100" Margin="5"
                                 Style="{StaticResource PrimaryButton}"
@@ -113,33 +147,39 @@
                                 Margin="5"
                                 Style="{StaticResource PrimaryButton}"
                                 Foreground="AntiqueWhite"
-                                Click="DeleteBook_Click" />
+                                Click="DeleteBook_Click" />-->
                     </StackPanel>
                 </Grid>
             </TabItem>
 
             <TabItem Header="Autori">
-                <Grid Background="{StaticResource AutoryTabBg}">
+                <Grid Background="{StaticResource AuthoryTabBg}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="TablAutoriDetail"
+                    <DataGrid x:Name="TablAutori"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               CanUserAddRows="False">
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25" />
-                            <DataGridTextColumn Header="Jmeno" Binding="{Binding JMENO}" Width="2*" />
-                            <DataGridTextColumn Header="Prijmeni" Binding="{Binding PRIJMENI}" Width="2*" />
+                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Jméno" Binding="{Binding JMENO}" Width="2*" />
+                            <DataGridTextColumn Header="Příjmení" Binding="{Binding PRIJMENI}" Width="2*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Nakladatelstvi">
+            <TabItem Header="Nakladatelství">
                 <Grid Background="{StaticResource NakladatelstviTabBg}">
 
                     <Grid.RowDefinitions>
@@ -147,15 +187,21 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="TablNakladatelstviDetail"
+                    <DataGrid x:Name="TablNakladatelstvi"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               CanUserAddRows="False" Grid.ColumnSpan="2" Margin="10,10,10,10">
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25" />
-                            <DataGridTextColumn Header="Nazev" Binding="{Binding NAZEV_FIRMY}" Width="2*" />
-                            <DataGridTextColumn Header="Mesto" Binding="{Binding MESTO}" Width="2*" />
+                            <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Název" Binding="{Binding NAZEV_FIRMY}" Width="2*" />
+                            <DataGridTextColumn Header="Město" Binding="{Binding MESTO}" Width="2*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

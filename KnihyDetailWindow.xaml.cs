@@ -21,7 +21,7 @@ namespace ukol1
             LoadKnihyDetail(knihyID);
         }
 
-        // pomocny: relativni -> absolutni cesta (pokud je treba)
+        //pomocny: relativni -> absolutni cesta (pokud je treba)
         private static string? ToAbsolute(string? dbPath)
         {
             if (string.IsNullOrWhiteSpace(dbPath)) return null;
@@ -30,7 +30,7 @@ namespace ukol1
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
         }
 
-        // nacteni detailu knihy + naplneni UI
+        //nacteni detailu knihy + naplneni UI
         private void LoadKnihyDetail(int id)
         {
             const string sqlMain = @"
@@ -57,35 +57,35 @@ namespace ukol1
                 using var reader = cmd.ExecuteReader();
                 if (!reader.Read())
                 {
-                    // UI text s diakritikou
+                    //UI text s diakritikou
                     MessageBox.Show("Kniha není v databázi.", "Chyba",
                         MessageBoxButton.OK, MessageBoxImage.Error);
                     Close();
                     return;
                 }
 
-                // titulek
+                //titulek
                 NazevText.Text = reader.IsDBNull(0) ? "-" : reader.GetString(0);
 
-                // autor
+                //autor
                 var autor = reader.IsDBNull(3) ? "" : reader.GetString(3);
                 AutorText.Text = string.IsNullOrWhiteSpace(autor) ? "-" : autor;
 
-                // rok
+                //rok
                 RokText.Text = reader.IsDBNull(1) ? "-" : reader.GetInt32(1).ToString();
 
-                // pocet stran
+                //pocet stran
                 PocetStranText.Text = reader.IsDBNull(2) ? "-" : reader.GetInt32(2).ToString();
 
-                // nakladatelstvi (v SQL je vzdy retezec, klidne i ", ")
+                //nakladatelstvi (v SQL je vzdy retezec, klidne i ", ")
                 var naklad = reader.IsDBNull(4) ? "" : reader.GetString(4);
                 NakladatelText.Text = string.IsNullOrWhiteSpace(naklad) ? "-" : naklad;
 
-                // popis
+                //popis
                 var popis = reader.IsDBNull(5) ? "" : reader.GetString(5);
                 PopisText.Text = string.IsNullOrWhiteSpace(popis) ? "-" : popis;
 
-                // obalka – nacti obrazek, pokud existuje
+                //obalka – nacti obrazek, pokud existuje
                 var absPath = ToAbsolute(reader.IsDBNull(6) ? null : reader.GetString(6));
                 try
                 {
@@ -105,12 +105,12 @@ namespace ukol1
                 }
                 catch
                 {
-                    // kdyz se nepodari, UI nepadne
+                    //kdyz se nepodari, UI nepadne
                     CoverImage.Source = null;
                 }
             }
 
-            // nacteni zanru (oddeleno kvuli jednoduchosti)
+            //nacteni zanru (oddeleno kvuli jednoduchosti)
             const string sqlZanry = @"
                 SELECT z.NAZEV_ZANRY
                 FROM KNIHY_ZANRY bg
@@ -128,7 +128,7 @@ namespace ukol1
                 while (rdr2.Read())
                     zanry.Add(rdr2.IsDBNull(0) ? "" : rdr2.GetString(0));
 
-                // zobrazeni: seznam nebo "-"
+                //zobrazeni: seznam nebo "-"
                 ZanryText.Text = zanry.Any()
                     ? string.Join(", ", zanry.Where(s => !string.IsNullOrWhiteSpace(s)))
                     : "-";

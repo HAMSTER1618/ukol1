@@ -4,7 +4,7 @@ using System.Data;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;   // Hyperlink
+using System.Windows.Documents;   //Hyperlink
 using System.Windows.Input;
 using FirebirdSql.Data.FirebirdClient;
 
@@ -202,7 +202,7 @@ namespace ukol1
             _isReloading = true;
             try
             {
-                //knihy načítáme přes MvvmBD (List<BookRow>) – rychlejší a přehlednější
+                //knihy načítáme přes MvvmBD (List<BookRow>)
                 TableBooks.ItemsSource = MvvmBD.GetBooks(_connString);
 
                 //zbylé tabulky – přímo SQL

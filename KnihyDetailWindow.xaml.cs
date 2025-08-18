@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using FirebirdSql.Data.FirebirdClient;
+using System.Threading.Tasks;
 
 namespace ukol1
 {
@@ -18,120 +19,81 @@ namespace ukol1
         public KnihyDetailWindow(int knihyID)
         {
             InitializeComponent();
-            LoadKnihyDetail(knihyID);
-        }
-
-        //pomocny: relativni -> absolutni cesta (pokud je treba)
-        private static string? ToAbsolute(string? dbPath)
-        {
-            if (string.IsNullOrWhiteSpace(dbPath)) return null;
-            return Path.IsPathRooted(dbPath)
-                ? dbPath
-                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
+            Loaded += async (_, __) => await LoadAsync(knihyID);
         }
 
         //nacteni detailu knihy + naplneni UI
-        private void LoadKnihyDetail(int id)
+        private async Task LoadAsync(int id)
         {
-            const string sqlMain = @"
-                SELECT
-                  k.NAZEV,
-                  k.ROK,
-                  k.POCET_STRAN,
-                  TRIM(COALESCE(a.PRIJMENI,'') || ' ' || COALESCE(a.JMENO,'')) AS AUTOR,
-                  TRIM(COALESCE(n.NAZEV_FIRMY,'')) || ', ' || TRIM(COALESCE(n.MESTO,'')) AS NAKLADATELSTVI,
-                  COALESCE(d.POPIS_KNIHY,'')  AS POPIS_KNIHY,
-                  COALESCE(d.KNIHY_CESTA,'') AS KNIHY_CESTA
-                FROM KNIHY k
-                LEFT JOIN AUTORY a ON k.AUTOR_ID = a.ID
-                LEFT JOIN NAKLADATELSTVI n ON k.NAKLADATELSTVI_ID = n.ID
-                LEFT JOIN KNIHY_DETAILY d ON k.ID = d.KNIHYDET_ID
-                WHERE k.ID = @id";
-
-            using (var conn = new FbConnection(_connString))
-            using (var cmd = new FbCommand(sqlMain, conn))
+            // nacteni hlavniho detailu knihy pres servis MvvmBD (async)
+            var d = await MvvmBD.GetBookDetailsAsync(_connString, id);
+            if (d == null)
             {
-                cmd.Parameters.AddWithValue("id", id);
-                conn.Open();
+                MessageBox.Show("Kniha není v databázi.", "Chyba",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+                return;
+            }
 
-                using var reader = cmd.ExecuteReader();
-                if (!reader.Read())
+            // vyplneni UI (vyuzijeme '-' pro prazdne hodnoty)
+            NazevText.Text = string.IsNullOrWhiteSpace(d.Nazev) ? "-" : d.Nazev;
+            AutorText.Text = string.IsNullOrWhiteSpace(d.Autor) ? "-" : d.Autor;
+            RokText.Text = d.Rok?.ToString() ?? "-";
+            PocetStranText.Text = d.PocetStran?.ToString() ?? "-";
+            NakladatelText.Text = string.IsNullOrWhiteSpace(d.Nakladatelstvi) ? "-" : d.Nakladatelstvi;
+            PopisText.Text = string.IsNullOrWhiteSpace(d.PopisKnihy) ? "-" : d.PopisKnihy;
+
+            // nacteni obalky (pokud je cesta)
+            var absPath = MvvmBD.ToAbsolute(d.KnihyCesta);
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(absPath) && File.Exists(absPath))
                 {
-                    //UI text s diakritikou
-                    MessageBox.Show("Kniha není v databázi.", "Chyba",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    Close();
-                    return;
+                    var img = new BitmapImage();
+                    img.BeginInit();
+                    img.CacheOption = BitmapCacheOption.OnLoad;
+                    img.UriSource = new Uri(absPath, UriKind.Absolute);
+                    img.EndInit();
+                    CoverImage.Source = img;
                 }
-
-                //titulek
-                NazevText.Text = reader.IsDBNull(0) ? "-" : reader.GetString(0);
-
-                //autor
-                var autor = reader.IsDBNull(3) ? "" : reader.GetString(3);
-                AutorText.Text = string.IsNullOrWhiteSpace(autor) ? "-" : autor;
-
-                //rok
-                RokText.Text = reader.IsDBNull(1) ? "-" : reader.GetInt32(1).ToString();
-
-                //pocet stran
-                PocetStranText.Text = reader.IsDBNull(2) ? "-" : reader.GetInt32(2).ToString();
-
-                //nakladatelstvi (v SQL je vzdy retezec, klidne i ", ")
-                var naklad = reader.IsDBNull(4) ? "" : reader.GetString(4);
-                NakladatelText.Text = string.IsNullOrWhiteSpace(naklad) ? "-" : naklad;
-
-                //popis
-                var popis = reader.IsDBNull(5) ? "" : reader.GetString(5);
-                PopisText.Text = string.IsNullOrWhiteSpace(popis) ? "-" : popis;
-
-                //obalka – nacti obrazek, pokud existuje
-                var absPath = ToAbsolute(reader.IsDBNull(6) ? null : reader.GetString(6));
-                try
+                else
                 {
-                    if (!string.IsNullOrWhiteSpace(absPath) && File.Exists(absPath))
-                    {
-                        var img = new BitmapImage();
-                        img.BeginInit();
-                        img.CacheOption = BitmapCacheOption.OnLoad;
-                        img.UriSource = new Uri(absPath, UriKind.Absolute);
-                        img.EndInit();
-                        CoverImage.Source = img;
-                    }
-                    else
-                    {
-                        CoverImage.Source = null;
-                    }
-                }
-                catch
-                {
-                    //kdyz se nepodari, UI nepadne
                     CoverImage.Source = null;
                 }
             }
-
-            //nacteni zanru (oddeleno kvuli jednoduchosti)
-            const string sqlZanry = @"
-                SELECT z.NAZEV_ZANRY
-                FROM KNIHY_ZANRY bg
-                JOIN ZANRY z ON bg.ZANRY_ID = z.ZANRY_ID
-                WHERE bg.KNIHY_ID = @id
-                ORDER BY z.NAZEV_ZANRY";
-
-            using (var conn2 = new FbConnection(_connString))
-            using (var cmd2 = new FbCommand(sqlZanry, conn2))
+            catch
             {
-                cmd2.Parameters.AddWithValue("id", id);
-                var zanry = new List<string>();
-                conn2.Open();
-                using var rdr2 = cmd2.ExecuteReader();
-                while (rdr2.Read())
-                    zanry.Add(rdr2.IsDBNull(0) ? "" : rdr2.GetString(0));
+                CoverImage.Source = null;
+            }
 
-                //zobrazeni: seznam nebo "-"
-                ZanryText.Text = zanry.Any()
-                    ? string.Join(", ", zanry.Where(s => !string.IsNullOrWhiteSpace(s)))
+            // nacteni zanru
+            const string sqlZanry = @"
+                    SELECT z.NAZEV_ZANRY
+                    FROM KNIHY_ZANRY bg
+                    JOIN ZANRY z ON bg.ZANRY_ID = z.ZANRY_ID
+                    WHERE bg.KNIHY_ID = @id
+                    ORDER BY z.NAZEV_ZANRY";
+
+            try
+            {
+                using var conn = new FbConnection(_connString);
+                await conn.OpenAsync();
+                using var cmd = new FbCommand(sqlZanry, conn);
+                cmd.Parameters.AddWithValue("id", id);
+
+                var names = new List<string>();
+                using var rdr = await cmd.ExecuteReaderAsync();
+                while (await rdr.ReadAsync())
+                    names.Add(rdr.IsDBNull(0) ? "" : rdr.GetString(0));
+
+                ZanryText.Text = names.Any()
+                    ? string.Join(", ", names.Where(s => !string.IsNullOrWhiteSpace(s)))
                     : "-";
+            }
+            catch
+            {
+                // pri chybe aspon zobrazime '-'
+                ZanryText.Text = "-";
             }
         }
     }

@@ -2,11 +2,14 @@
 using System.Configuration;
 using System.Data;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;   //Hyperlink
+using System.Windows.Documents;   // Hyperlink
 using System.Windows.Input;
 using FirebirdSql.Data.FirebirdClient;
+using ukol1;
+using static ukol1.MvvmBD;
 
 namespace ukol1
 {
@@ -22,15 +25,26 @@ namespace ukol1
         {
             InitializeComponent();
 
-            Loaded += (s, e) =>
-            {
-                CleanDBonStart();
-                ReloadAllTable();
-            };
+            Loaded += async (s, e) => { CleanDBonStart(); await ReloadAllTableAsync(); };
 
             //kontextové menu
-            CtxEdit.Click += (s, e) => EditSelected();
-            CtxDelete.Click += (s, e) => DeleteSelected();
+            CtxEdit.Click += async (s, e) => await EditSelectedAsync();
+            CtxDelete.Click += async (s, e) => await DeleteSelectedAsync();
+        }
+
+        //Univerzal pro SELECT -> DataView (bezi mimo UI vlakno, aby se okno nezamykalo)
+        private static Task<DataView> LoadDataViewAsync(string connStr, string sql)
+        {
+            return Task.Run(() =>
+            {
+                using var conn = new FbConnection(connStr);
+                using var cmd = new FbCommand(sql, conn);
+                using var da = new FbDataAdapter(cmd);
+                var dt = new DataTable();
+                conn.Open();
+                da.Fill(dt);
+                return dt.DefaultView;
+            });
         }
 
         //kontrola tabulky na začátku – smazat osamělé řádky bez knih
@@ -74,47 +88,45 @@ namespace ukol1
         }
 
         //buttony jsou schované, ale ponechány pro případ návratu na tlačítka
-        private void CtxDelete_Click(object sender, RoutedEventArgs e) => DeleteSelected();
+        private async void CtxDelete_Click(object sender, RoutedEventArgs e) => await DeleteSelectedAsync();
 
-        private void CtxEdit_Click(object sender, RoutedEventArgs e) => EditSelected();
+        private void CtxEdit_Click(object sender, RoutedEventArgs e) => EditSelectedAsync();
 
         //logika pro smazání přes button (teď schováno) – jen přesměrování
-        private void DeleteBook_Click(object sender, RoutedEventArgs e) => DeleteSelected();
+        private void DeleteBook_Click(object sender, RoutedEventArgs e) => DeleteSelectedAsync();
 
         //smazání knihy (pravé tlačítko / Delete)
-        private void DeleteSelected()
+        //Smazat vybranou knihu (potvrzeni) a po smazani obnovit tabulky
+        private async Task DeleteSelectedAsync()
         {
             var id = GetSelectedBookID();
             if (id == null) return;
 
-            //potvrzení
-            string? nazev = null;
-            var sel = TableBooks.SelectedItem;
-            if (sel is BookRow br) nazev = br.Nazev;
-            else if (sel is DataRowView drv) nazev = drv["NAZEV"] as string;
-
-            if (MessageBox.Show(
+            if (TableBooks.SelectedItem is DataRowView row)
+            {
+                string? nazev = row["NAZEV"] as string;
+                if (MessageBox.Show(
                     $"Opravdu chcete smazat knihu: \"{nazev}\"?",
-                    "Potvrzení", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
-                return;
+                    "Potvrzeni", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
+            }
 
-            //smazání + refresh
-            MvvmBD.DeleteBookCascade(_connString, id.Value);
-            ReloadAllTable();
+            MvvmBD.DeleteBookCascadeAsync(_connString, id.Value); //synch. DB mazani
+            await ReloadAllTableAsync();                     //refresh
         }
 
         //oprava knihy + aktualizace tabulek (schovaný button ponechán)
-        private void EditBook_Click(object sender, RoutedEventArgs e) => EditSelected();
+        private async void EditBook_Click(object sender, RoutedEventArgs e) => EditSelectedAsync();
 
-        //dostávání ID vybrané knihy a otevření detailního okna pro editaci
-        private void EditSelected()
+        //Otevrit dialog pro upravu vybrane knihy a pak obnovit tabulky
+        private async Task EditSelectedAsync()
         {
             var id = GetSelectedBookID();
             if (id == null) return;
 
             var win = new KnihyDetailWindowAdd(id.Value) { Owner = this };
             if (win.ShowDialog() == true)
-                ReloadAllTable();
+                await ReloadAllTableAsync();
         }
 
         //načítání ID vybrané knihy (funguje i pro BookRow, i pro DataRowView)
@@ -123,54 +135,38 @@ namespace ukol1
             var item = TableBooks.SelectedItem;
             if (item == null) return null;
 
-            if (item is BookRow br) return br.ID;
-            if (item is DataRowView drv) return Convert.ToInt32(drv["ID"]);
+            // коли ItemsSource = DataTable / DefaultView
+            if (item is DataRowView drv)
+                return Convert.ToInt32(drv["ID"]);
 
+            // будь-який об'єкт, що має властивість ID
             var prop = item.GetType().GetProperty("ID");
-            return prop != null ? Convert.ToInt32(prop.GetValue(item)) : (int?)null;
+            if (prop != null)
+            {
+                var val = prop.GetValue(item);
+                if (val != null) return Convert.ToInt32(val);
+            }
+            return null;
         }
 
-        //načítání dat do libovolné tabulky (používá se pro Autory/Nakladatelství)
-        private void LoadTable(string sql, DataGrid grid)
-        {
-            var dt = new DataTable();
-            try
-            {
-                using var conn = new FbConnection(_connString);
-                using var cmd = new FbCommand(sql, conn);
-                using var da = new FbDataAdapter(cmd);
-
-                conn.Open();
-                da.Fill(dt);
-                grid.ItemsSource = dt.DefaultView;
-            }
-            catch
-            {
-                //ignore
-            }
-        }
-
-        private void OpenBookLink_Click(object sender, RoutedEventArgs e)
+        private async void OpenBookLink_Click(object sender, RoutedEventArgs e)
         {
             int id;
             if (sender is Hyperlink h)
             {
-                if (h.DataContext is BookRow br)
-                    id = br.ID;
-                else if (h.DataContext is DataRowView drv)
-                    id = Convert.ToInt32(drv["ID"]);
-                else
-                    return;
+                if (h.DataContext is BookRow br) id = br.ID;
+                else if (h.DataContext is DataRowView drv) id = Convert.ToInt32(drv["ID"]);
+                else return;
             }
             else return;
 
-            //otevření detailního okna pro vybranou knihu
+            // Otevrit detail a po zavreni znovu nacist tabulky
             var win = new KnihyDetailWindow(id) { Owner = this };
             win.ShowDialog();
-            ReloadAllTable();
+            await ReloadAllTableAsync();
         }
 
-        private void OpenDetailsForSelected()
+        private async Task OpenDetailsForSelected()
         {
             var id = GetSelectedBookID();
             if (id == null) return;
@@ -181,7 +177,7 @@ namespace ukol1
             {
                 var win = new KnihyDetailWindow(id.Value) { Owner = this };
                 win.ShowDialog();
-                ReloadAllTable();
+                await ReloadAllTableAsync();
             }
             finally
             {
@@ -189,25 +185,28 @@ namespace ukol1
             }
         }
 
-        private void PridatKnihu_Click(object sender, RoutedEventArgs e)
+        private async void PridatKnihu_Click(object sender, RoutedEventArgs e)
         {
             var win = new KnihyDetailWindowAdd { Owner = this };
             if (win.ShowDialog() == true)
-                ReloadAllTable();
+                await ReloadAllTableAsync();
         }
 
         //aktualizace všech tabulek a jejich dat
-        private void ReloadAllTable()
+        //nacteni vsech tabulek (async)
+        private async Task ReloadAllTableAsync()
         {
             _isReloading = true;
             try
             {
-                //knihy načítáme přes MvvmBD (List<BookRow>)
-                TableBooks.ItemsSource = MvvmBD.GetBooks(_connString);
+                //Knihy – bereme jako List<BookRow>, pak vynutime prekresleni gridu
+                var books = await MvvmBD.GetBooksAsync(_connString);
+                TableBooks.ItemsSource = null;        //vynuti prekresleni
+                TableBooks.ItemsSource = books;
 
-                //zbylé tabulky – přímo SQL
-                LoadTable("SELECT * FROM AUTORY ORDER BY ID", TablAutori);
-                LoadTable("SELECT * FROM NAKLADATELSTVI ORDER BY ID", TablNakladatelstvi);
+                //Autori a Nakladatelstvi – nahrat jako DataView na pozadi
+                TablAutori.ItemsSource = await LoadDataViewAsync(_connString, "SELECT * FROM AUTORY ORDER BY ID");
+                TablNakladatelstvi.ItemsSource = await LoadDataViewAsync(_connString, "SELECT * FROM NAKLADATELSTVI ORDER BY ID");
 
                 TableBooks.SelectedItem = null;
                 BtnPridatKnihu.IsEnabled = true;
@@ -218,16 +217,16 @@ namespace ukol1
             }
         }
 
-        private void TableBooks_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void TableBooks_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                EditSelected();
+                await EditSelectedAsync();
                 e.Handled = true;
             }
             else if (e.Key == Key.Delete)
             {
-                DeleteSelected();
+                await DeleteSelectedAsync();
                 e.Handled = true;
             }
         }

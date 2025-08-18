@@ -10,6 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using FirebirdSql.Data.FirebirdClient;
+using System.Threading.Tasks;
 
 namespace ukol1
 {
@@ -56,8 +57,6 @@ namespace ukol1
             //zruseni chyboveho oznaceni pri zmene
             NazevKnihyBox.TextChanged += RemoveErrorOnChange;
             AuthorBox.TextChanged += RemoveErrorOnChange;
-            RokVydaniBox.TextChanged += RemoveErrorOnChange;
-            PocetStranBox.TextChanged += RemoveErrorOnChange;
         }
 
         //kořen slozky pro obalky
@@ -70,6 +69,9 @@ namespace ukol1
             border.ClearValue(BorderThicknessProperty);
             tb.ClearValue(BackgroundProperty);
         }
+
+        // kontrola: povolene jsou pouze cislice nebo prazdny retezec
+        private static bool IsDigitsOrEmpty(string? s) => string.IsNullOrWhiteSpace(s) || s!.All(char.IsDigit);
 
         //vytvorit bezpecne jmeno souboru
         private static string MakeSafeFileName(string name)
@@ -208,7 +210,10 @@ namespace ukol1
                 ZanryBox.Text = genre;
             }
 
-            ZanryBox.CaretIndex = ZanryBox.Text.Length;
+            // nastav kurzor na konec a fokus zpet do textboxu
+            ZanryBox.CaretIndex = ZanryBox.Text.Length;   // kurzor na konec
+            ZanryBox.Focus();                              // fokus na textbox
+            Keyboard.Focus(ZanryBox);
             GenrePopup.IsOpen = false;
         }
 
@@ -231,11 +236,24 @@ namespace ukol1
                 ApplyGenreSuggestions(genre);
         }
 
+        // skryje popup chyby pro dany TextBox
+        private void HideNumErrorFor(TextBox tb)
+        {
+            if (tb == RokVydaniBox) RokErrPopup.IsOpen = false;
+            else if (tb == PocetStranBox) StranErrPopup.IsOpen = false;
+        }
+
         //povolit pouze cislice (vkladani + psani)
         private void HookNumericOnly(TextBox tb)
         {
+            // povoli jen cislice pri psani
             tb.PreviewTextInput += NumericOnly_PreviewTextInput;
+            // zakaze mezeru
+            tb.PreviewKeyDown += NumericOnly_PreviewKeyDown;
+            // kontrola pri vlozeni (Ctrl+V)
             DataObject.AddPastingHandler(tb, NumericOnly_OnPaste);
+            // pri kazde zmene textu skryje chybu, kdyz je vstup validni
+            tb.TextChanged += RemoveErrorOnChange;
         }
 
         //nacteni hodnot do formulare
@@ -392,24 +410,51 @@ namespace ukol1
             }
         }
 
-        //kontrola vlozeni: pouze cisla
+        // blokovat paste s neciselnyma znaky
         private void NumericOnly_OnPaste(object sender, DataObjectPastingEventArgs e)
         {
+            var tb = (TextBox)sender;
             if (e.DataObject.GetDataPresent(DataFormats.Text))
             {
                 var text = e.DataObject.GetData(DataFormats.Text) as string;
-                if (text != null && !text.All(char.IsDigit))
+                if (string.IsNullOrEmpty(text) || !text.All(char.IsDigit))
+                {
                     e.CancelCommand();
+                    ShowNumErrorFor(tb, "Lze zadat pouze číslice.");
+                }
             }
             else
             {
                 e.CancelCommand();
+                ShowNumErrorFor(tb, "Lze zadat pouze číslice.");
+            }
+        }
+
+        // blokovat mezernik (pro jistotu i kdyby TextInput proslo)
+        private void NumericOnly_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                e.Handled = true;
+                ShowNumErrorFor((TextBox)sender, "Lze zadat pouze číslice.");
             }
         }
 
         //povolit jen cisla 0-9
         private void NumericOnly_PreviewTextInput(object sender, TextCompositionEventArgs e)
-            => e.Handled = !e.Text.All(char.IsDigit);
+        {
+            var tb = (TextBox)sender;
+            bool ok = e.Text.All(char.IsDigit);
+            if (!ok)
+            {
+                e.Handled = true;                            // zamezi vlozeni znaku
+                ShowNumErrorFor(tb, "Lze zadat pouze číslice.");
+            }
+            else
+            {
+                HideNumErrorFor(tb);                         // pri spravnem vstupu skryj chybu
+            }
+        }
 
         //otevrit dialog a vybrat obalku (UI s diakritikou)
         private void PickCover_Click(object sender, RoutedEventArgs e)
@@ -429,14 +474,22 @@ namespace ukol1
         //pri zmene textu odstranit cervene oramovani
         private void RemoveErrorOnChange(object? sender, TextChangedEventArgs e)
         {
-            if (sender == NazevKnihyBox) ClearError(NazevBorder, NazevKnihyBox);
+            if (sender == RokVydaniBox)
+            {
+                if (IsDigitsOrEmpty(RokVydaniBox.Text)) HideNumErrorFor(RokVydaniBox);
+                ClearError(RokBorder, RokVydaniBox);
+            }
+            else if (sender == PocetStranBox)
+            {
+                if (IsDigitsOrEmpty(PocetStranBox.Text)) HideNumErrorFor(PocetStranBox);
+                ClearError(StranBorder, PocetStranBox);
+            }
+            else if (sender == NazevKnihyBox) ClearError(NazevBorder, NazevKnihyBox);
             else if (sender == AuthorBox) ClearError(AuthorBorder, AuthorBox);
-            else if (sender == RokVydaniBox) ClearError(RokBorder, RokVydaniBox);
-            else if (sender == PocetStranBox) ClearError(StranBorder, PocetStranBox);
         }
 
         //ulozit/aktualizovat knihu
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             ClearError(NazevBorder, NazevKnihyBox);
             ClearError(AuthorBorder, AuthorBox);
@@ -444,41 +497,22 @@ namespace ukol1
             ClearError(StranBorder, PocetStranBox);
 
             var nazev = (NazevKnihyBox.Text ?? "").Trim();
+            var Author = (AuthorBox.Text ?? "").Trim();
             var authorFull = (AuthorBox.Text ?? "").Trim();
 
             if (string.IsNullOrWhiteSpace(nazev))
             {
-                MessageBox.Show("Název knihy je povinné pole.", "Chyba",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Název knihy je povinné pole.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
                 MarkError(NazevBorder, NazevKnihyBox);
                 NazevKnihyBox.Focus();
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(authorFull))
+            if (string.IsNullOrWhiteSpace(Author))
             {
-                MessageBox.Show("Autor knihy je povinné pole.", "Chyba",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Autor knihy je povinné pole.", "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
                 MarkError(AuthorBorder, AuthorBox);
                 AuthorBox.Focus();
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(RokVydaniBox.Text) && !RokVydaniBox.Text.All(char.IsDigit))
-            {
-                MessageBox.Show("Pole 'Rok vydání' může obsahovat pouze číslice.", "Chyba",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-                MarkError(RokBorder, RokVydaniBox);
-                RokVydaniBox.Focus();
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(PocetStranBox.Text) && !PocetStranBox.Text.All(char.IsDigit))
-            {
-                MessageBox.Show("Pole 'Počet stran' může obsahovat pouze číslice.", "Chyba",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-                MarkError(StranBorder, PocetStranBox);
-                PocetStranBox.Focus();
                 return;
             }
 
@@ -490,7 +524,8 @@ namespace ukol1
 
             try
             {
-                MvvmBD.SaveOrUpdateBook(
+                // Ulozit do DB (async obalka nad existujicim kodem v MvvmBD)
+                await MvvmBD.SaveOrUpdateBookAsync(
                     _connString,
                     _knihyID,
                     nazev,
@@ -504,13 +539,28 @@ namespace ukol1
                     ZanryBox.Text
                 );
 
-                DialogResult = true;
+                DialogResult = true; // hlavni okno pozna, ze ma refreshnout tabulky
                 Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Nepodařilo se uložit knihu: " + ex.Message,
+                MessageBox.Show("Nepodarilo se ulozit knihu: " + ex.Message,
                                 "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ukaz chybu okamzite pri zakazanych vstupech (mezera, necislo, paste)
+        private void ShowNumErrorFor(TextBox tb, string message)
+        {
+            if (tb == RokVydaniBox)
+            {
+                RokErrText.Text = message;
+                RokErrPopup.IsOpen = true;
+            }
+            else if (tb == PocetStranBox)
+            {
+                StranErrText.Text = message;
+                StranErrPopup.IsOpen = true;
             }
         }
 

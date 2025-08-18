@@ -119,22 +119,59 @@
                            FontSize="14" Height="19" />
                 <Border x:Name="RokBorder"
                         Grid.Row="3" BorderThickness="1"
-                        Margin="10,10,19,3">
-                    <TextBox x:Name="RokVydaniBox" Margin="0,-1,0,-1"
-                             MaxLength="4" />
+                        Margin="12,14,12,14">
+                    <TextBox x:Name="RokVydaniBox" Grid.Row="0" Margin="4,5,4,8" MaxLength="4" Grid.RowSpan="2" />
                 </Border>
+                <Popup x:Name="RokErrPopup"
+                       PlacementTarget="{Binding ElementName=RokVydaniBox}"
+                       Placement="Bottom"
+                       StaysOpen="True"
+                       AllowsTransparency="True"
+                       IsHitTestVisible="False"
+                       HorizontalOffset="0" VerticalOffset="4">
+                    <Border Background="#FFFFEEEE"
+                            BorderBrush="#FFCC0000"
+                            BorderThickness="2"
+
+                            Padding="6"
+                            Width="{Binding ElementName=RokVydaniBox, Path=ActualWidth}">
+                        <TextBlock x:Name="RokErrText"
+                            Text="Lze zadat pouze číslice."
+                            Foreground="#CC0000"
+                            FontWeight="SemiBold" />
+                    </Border>
+                </Popup>
 
                 <TextBlock Grid.Row="2" Grid.Column="1"
                            Text="Počet stran:"
                            VerticalAlignment="Center"
                            Margin="10,0,25,0"
                            FontSize="14" Height="19" />
-                <Border x:Name="StranBorder" Grid.Row="3"
-                        Grid.Column="1"
+                <Border x:Name="StranBorder"
+                        Grid.Row="3" Grid.Column="1"
                         BorderThickness="1"
-                        Margin="10,10,10,3">
-                    <TextBox x:Name="PocetStranBox" Margin="0,-1,0,-1" MaxLength="5" />
+                        Margin="12,14,12,14">
+                    <TextBox x:Name="PocetStranBox" Grid.Row="0" Margin="4,5,4,8" MaxLength="5" Grid.RowSpan="2" />
                 </Border>
+                <Popup x:Name="StranErrPopup"
+                       PlacementTarget="{Binding ElementName=PocetStranBox}"
+                       Placement="Bottom"
+                       StaysOpen="True"
+                       AllowsTransparency="True"
+                       IsHitTestVisible="False"
+                       HorizontalOffset="0" VerticalOffset="4">
+                    <Border Background="#FFFFEEEE"
+                            BorderBrush="#FFCC0000"
+                            BorderThickness="2"
+
+                            Padding="6"
+                            Width="{Binding ElementName=PocetStranBox, Path=ActualWidth}">
+                        <TextBlock x:Name="StranErrText"
+                           Text="Lze zadat pouze číslice."
+                           Foreground="#CC0000"
+                           FontWeight="SemiBold" />
+                    </Border>
+                </Popup>
 
                 <!-- Vybrat obálku -->
                 <TextBlock Grid.Row="2" Grid.Column="2" Text="Vybrat obálku:"
@@ -143,7 +180,7 @@
                 <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal"
                             Margin="5,0,1,2">
                     <Button Content="Vybrat obálku" Click="PickCover_Click" Width="89"
-                            Height="21" Margin="0,9,3,0" />
+                            Height="20" />
                     <TextBlock x:Name="CoverFileLabel" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"
                                Width="180" />

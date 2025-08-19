@@ -1,43 +1,44 @@
-﻿using System;
-using System.Configuration;
-using System.Data;
-using System.IO;
-using System.Threading.Tasks;
+﻿using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;   // Hyperlink
 using System.Windows.Input;
 using FirebirdSql.Data.FirebirdClient;
-using ukol1;
-using static ukol1.MvvmBD;
+using static ukol1.Manager;
 
 namespace ukol1
 {
     public partial class MainWindow : Window
     {
-        private readonly string _connString =
-            ConfigurationManager.ConnectionStrings["KNIHOVNA2"].ConnectionString;
-
         private bool _isReloading;
         private bool _openingDetails;
 
         public MainWindow()
         {
             InitializeComponent();
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-            Loaded += async (s, e) => { CleanDBonStart(); await ReloadAllTableAsync(); };
+            // On startup: clean orphan rows and then load all tables.
+            Loaded += async (s, e) =>
+            {
+                await Manager.CleanDbOrphansAsync();
+                await ReloadAllTableAsync();
+            };
 
-            //kontextové menu
+            // Context menu actions.
             CtxEdit.Click += async (s, e) => await EditSelectedAsync();
             CtxDelete.Click += async (s, e) => await DeleteSelectedAsync();
         }
 
-        //Univerzal pro SELECT -> DataView (bezi mimo UI vlakno, aby se okno nezamykalo)
-        private static Task<DataView> LoadDataViewAsync(string connStr, string sql)
+        /// <summary>
+        /// Generic helper: run SELECT -> DataView off the UI thread
+        /// so the window stays responsive.
+        /// </summary>
+        private static Task<DataView> LoadDataViewAsync(string sql)
         {
             return Task.Run(() =>
             {
-                using var conn = new FbConnection(connStr);
+                using var conn = new FbConnection(Manager.ConnectionString);
                 using var cmd = new FbCommand(sql, conn);
                 using var da = new FbDataAdapter(cmd);
                 var dt = new DataTable();
@@ -47,78 +48,55 @@ namespace ukol1
             });
         }
 
-        //kontrola tabulky na začátku – smazat osamělé řádky bez knih
-        private void CleanDBonStart()
+        private async void AddBook_Click(object sender, RoutedEventArgs e)
         {
-            using var conn = new FbConnection(_connString);
-            conn.Open();
-            using var tx = conn.BeginTransaction();
-
-            //smazání autorů bez knih
-            using (var cmd = new FbCommand(@"
-                DELETE FROM AUTORY
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM KNIHY WHERE KNIHY.AUTOR_ID = AUTORY.ID
-                )", conn, tx))
-            {
-                cmd.ExecuteNonQuery();
-            }
-
-            //smazání nakladatelství bez knih
-            using (var cmd = new FbCommand(@"
-                DELETE FROM NAKLADATELSTVI
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM KNIHY WHERE KNIHY.NAKLADATELSTVI_ID = NAKLADATELSTVI.ID
-                )", conn, tx))
-            {
-                cmd.ExecuteNonQuery();
-            }
-
-            //smazání žánrů bez knih
-            using (var cmd = new FbCommand(@"
-                DELETE FROM ZANRY
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM KNIHY_ZANRY kg WHERE kg.ZANRY_ID = ZANRY.ZANRY_ID
-                )", conn, tx))
-            {
-                cmd.ExecuteNonQuery();
-            }
-
-            tx.Commit();
+            var win = new KnihyDetailWindowAdd { Owner = this };
+            if (win.ShowDialog() == true)
+                await ReloadAllTableAsync();
         }
 
-        //buttony jsou schované, ale ponechány pro případ návratu na tlačítka
-        private async void CtxDelete_Click(object sender, RoutedEventArgs e) => await DeleteSelectedAsync();
+        /// <summary>
+        /// Toolbar delete button – just forwards to the common delete routine.
+        /// </summary>
+        private async void DeleteBook_Click(object sender, RoutedEventArgs e) => await DeleteSelectedAsync();
 
-        private void CtxEdit_Click(object sender, RoutedEventArgs e) => EditSelectedAsync();
-
-        //logika pro smazání přes button (teď schováno) – jen přesměrování
-        private void DeleteBook_Click(object sender, RoutedEventArgs e) => DeleteSelectedAsync();
-
-        //smazání knihy (pravé tlačítko / Delete)
-        //Smazat vybranou knihu (potvrzeni) a po smazani obnovit tabulky
+        /// <summary>
+        /// Delete the selected book (after confirmation) and reload all tables.
+        /// Works both for DataRowView and strongly-typed BookRow.
+        /// </summary>
         private async Task DeleteSelectedAsync()
         {
             var id = GetSelectedBookID();
             if (id == null) return;
 
-            if (TableBooks.SelectedItem is DataRowView row)
+            // Try to get a human-friendly name for the confirmation dialog.
+            string? name = TableBooks.SelectedItem switch
             {
-                string? nazev = row["NAZEV"] as string;
-                if (MessageBox.Show(
-                    $"Opravdu chcete smazat knihu: \"{nazev}\"?",
-                    "Potvrzeni", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
-                    return;
-            }
+                DataRowView drv => drv["Nazev"] as string,
+                Manager.BookRow br => br.Nazev,
+                _ => null
+            };
 
-            MvvmBD.DeleteBookCascadeAsync(_connString, id.Value); //synch. DB mazani
-            await ReloadAllTableAsync();                     //refresh
+            var msg = !string.IsNullOrWhiteSpace(name)
+                ? $"Opravdu chcete smazat knihu: \"{name}\"?"
+                : "Opravdu chcete smazat vybranou knihu?";
+
+            if (MessageBox.Show(msg, "Potvrzení",
+                                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            await Manager.DeleteBookCascadeAsync(id.Value);
+            await ReloadAllTableAsync();
         }
 
-        //oprava knihy + aktualizace tabulek (schovaný button ponechán)
-        private async void EditBook_Click(object sender, RoutedEventArgs e) => EditSelectedAsync();
+        /// <summary>
+        /// Toolbar edit button – open dialog for the selected book; then reload.
+        /// </summary>
+        private async void EditBook_Click(object sender, RoutedEventArgs e) => await EditSelectedAsync();
 
-        //Otevrit dialog pro upravu vybrane knihy a pak obnovit tabulky
+        /// <summary>
+        /// Open edit dialog for the selected book; after closing, reload data.
+        /// </summary>
         private async Task EditSelectedAsync()
         {
             var id = GetSelectedBookID();
@@ -129,24 +107,24 @@ namespace ukol1
                 await ReloadAllTableAsync();
         }
 
-        //načítání ID vybrané knihy (funguje i pro BookRow, i pro DataRowView)
+        /// <summary>
+        /// Get ID of the currently selected book (supports DataRowView and BookRow).
+        /// </summary>
         private int? GetSelectedBookID()
         {
             var item = TableBooks.SelectedItem;
             if (item == null) return null;
 
-            // коли ItemsSource = DataTable / DefaultView
             if (item is DataRowView drv)
                 return Convert.ToInt32(drv["ID"]);
 
-            // будь-який об'єкт, що має властивість ID
+            if (item is Manager.BookRow br)
+                return br.ID;
+
+            // Fallback via reflection if some other type appears.
             var prop = item.GetType().GetProperty("ID");
-            if (prop != null)
-            {
-                var val = prop.GetValue(item);
-                if (val != null) return Convert.ToInt32(val);
-            }
-            return null;
+            var val = prop?.GetValue(item);
+            return val != null ? Convert.ToInt32(val) : (int?)null;
         }
 
         private async void OpenBookLink_Click(object sender, RoutedEventArgs e)
@@ -154,24 +132,26 @@ namespace ukol1
             int id;
             if (sender is Hyperlink h)
             {
-                if (h.DataContext is BookRow br) id = br.ID;
+                if (h.DataContext is Manager.BookRow br) id = br.ID;
                 else if (h.DataContext is DataRowView drv) id = Convert.ToInt32(drv["ID"]);
                 else return;
             }
             else return;
 
-            // Otevrit detail a po zavreni znovu nacist tabulky
+            // Open details and then reload.
             var win = new KnihyDetailWindow(id) { Owner = this };
             win.ShowDialog();
             await ReloadAllTableAsync();
         }
 
+        /// <summary>
+        /// Open details for the currently selected row (re-entrancy-safe).
+        /// </summary>
         private async Task OpenDetailsForSelected()
         {
             var id = GetSelectedBookID();
-            if (id == null) return;
+            if (id == null || _openingDetails) return;
 
-            if (_openingDetails) return;
             _openingDetails = true;
             try
             {
@@ -185,36 +165,42 @@ namespace ukol1
             }
         }
 
-        private async void PridatKnihu_Click(object sender, RoutedEventArgs e)
-        {
-            var win = new KnihyDetailWindowAdd { Owner = this };
-            if (win.ShowDialog() == true)
-                await ReloadAllTableAsync();
-        }
-
-        //aktualizace všech tabulek a jejich dat
-        //nacteni vsech tabulek (async)
+        /// <summary>
+        /// Reload books, authors and publishers into their grids.
+        /// </summary>
         private async Task ReloadAllTableAsync()
         {
             _isReloading = true;
             try
             {
-                //Knihy – bereme jako List<BookRow>, pak vynutime prekresleni gridu
-                var books = await MvvmBD.GetBooksAsync(_connString);
-                TableBooks.ItemsSource = null;        //vynuti prekresleni
+                // Books: load as a typed list and force grid redraw.
+                var books = await Manager.GetBooksAsync();
+                TableBooks.ItemsSource = null;
                 TableBooks.ItemsSource = books;
 
-                //Autori a Nakladatelstvi – nahrat jako DataView na pozadi
-                TablAutori.ItemsSource = await LoadDataViewAsync(_connString, "SELECT * FROM AUTORY ORDER BY ID");
-                TablNakladatelstvi.ItemsSource = await LoadDataViewAsync(_connString, "SELECT * FROM NAKLADATELSTVI ORDER BY ID");
+                // Authors and publishers: load as DataView on a background thread.
+                TableAuthor.ItemsSource = await LoadDataViewAsync("SELECT * FROM AUTORY ORDER BY ID");
+                TablePubl.ItemsSource = await LoadDataViewAsync("SELECT * FROM NAKLADATELSTVI ORDER BY ID");
 
+                // Reset selection and buttons state.
                 TableBooks.SelectedItem = null;
-                BtnPridatKnihu.IsEnabled = true;
+                BtnAddBook.IsEnabled = true;
+                BtnEditBook.IsEnabled = false;
+                BtnDeleteBook.IsEnabled = false;
             }
             finally
             {
                 _isReloading = false;
             }
+        }
+
+        /// <summary>
+        /// Left-click on a row: open details.
+        /// </summary>
+        private async void TableBooks_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isReloading || _openingDetails) return;
+            await OpenDetailsForSelected();
         }
 
         private async void TableBooks_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -233,19 +219,11 @@ namespace ukol1
 
         private void TableBooks_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!_isReloading && !_openingDetails)
-            {
-                //bool hasSel = TableBooks.SelectedItem is DataRowView;
-                //BtnUpravitKnihu.IsEnabled = hasSel;
-                //BtnSmazatKnihu.IsEnabled = hasSel;
-            }
-        }
-
-        //levy klik - otevření detailů (kursor na řádku ruka)
-        private void TablKnihy_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
             if (_isReloading || _openingDetails) return;
-            OpenDetailsForSelected();
+
+            var hasSel = TableBooks.SelectedItem != null;
+            BtnEditBook.IsEnabled = hasSel;
+            BtnDeleteBook.IsEnabled = hasSel;
         }
     }
 }

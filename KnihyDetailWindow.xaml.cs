@@ -1,32 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using FirebirdSql.Data.FirebirdClient;
-using System.Threading.Tasks;
 
 namespace ukol1
 {
     public partial class KnihyDetailWindow : Window
     {
-        private readonly string _connString =
-            ConfigurationManager.ConnectionStrings["KNIHOVNA2"].ConnectionString;
+        private const string SqlGenres = @"
+            SELECT z.NAZEV_ZANRY
+            FROM KNIHY_ZANRY bg
+            JOIN ZANRY z ON bg.ZANRY_ID = z.ZANRY_ID
+            WHERE bg.KNIHY_ID = @id
+            ORDER BY z.NAZEV_ZANRY";
 
-        public KnihyDetailWindow(int knihyID)
+        public KnihyDetailWindow(int bookID)
         {
             InitializeComponent();
-            Loaded += async (_, __) => await LoadAsync(knihyID);
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            Loaded += async (_, __) => await LoadAsync(bookID);
         }
 
-        //nacteni detailu knihy + naplneni UI
+        // load book details and fill the UI
         private async Task LoadAsync(int id)
         {
-            // nacteni hlavniho detailu knihy pres servis MvvmBD (async)
-            var d = await MvvmBD.GetBookDetailsAsync(_connString, id);
+            var d = await Manager.GetBookDetailsAsync(id);
             if (d == null)
             {
                 MessageBox.Show("Kniha není v databázi.", "Chyba",
@@ -35,7 +33,6 @@ namespace ukol1
                 return;
             }
 
-            // vyplneni UI (vyuzijeme '-' pro prazdne hodnoty)
             NazevText.Text = string.IsNullOrWhiteSpace(d.Nazev) ? "-" : d.Nazev;
             AutorText.Text = string.IsNullOrWhiteSpace(d.Autor) ? "-" : d.Autor;
             RokText.Text = d.Rok?.ToString() ?? "-";
@@ -43,8 +40,40 @@ namespace ukol1
             NakladatelText.Text = string.IsNullOrWhiteSpace(d.Nakladatelstvi) ? "-" : d.Nakladatelstvi;
             PopisText.Text = string.IsNullOrWhiteSpace(d.PopisKnihy) ? "-" : d.PopisKnihy;
 
-            // nacteni obalky (pokud je cesta)
-            var absPath = MvvmBD.ToAbsolute(d.KnihyCesta);
+            // cover image
+            LoadCover(Manager.ToAbsolute(d.KnihyCesta));
+
+            // genres
+            try
+            {
+                using var conn = new FbConnection(Manager.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new FbCommand(SqlGenres, conn);
+                cmd.Parameters.AddWithValue("id", id);
+
+                var names = new List<string>();
+                using var rdr = await cmd.ExecuteReaderAsync();
+                while (await rdr.ReadAsync())
+                {
+                    names.Add(await rdr.IsDBNullAsync(0)
+                        ? ""
+                        : await rdr.GetFieldValueAsync<string>(0));
+                }
+
+                // show "-" if all entries are empty/whitespace
+                GenreText.Text = names.Any(s => !string.IsNullOrWhiteSpace(s))
+                    ? string.Join(", ", names.Where(s => !string.IsNullOrWhiteSpace(s)))
+                    : "-";
+            }
+            catch
+            {
+                GenreText.Text = "-";
+            }
+        }
+
+        private void LoadCover(string? absPath)
+        {
             try
             {
                 if (!string.IsNullOrWhiteSpace(absPath) && File.Exists(absPath))
@@ -64,36 +93,6 @@ namespace ukol1
             catch
             {
                 CoverImage.Source = null;
-            }
-
-            // nacteni zanru
-            const string sqlZanry = @"
-                    SELECT z.NAZEV_ZANRY
-                    FROM KNIHY_ZANRY bg
-                    JOIN ZANRY z ON bg.ZANRY_ID = z.ZANRY_ID
-                    WHERE bg.KNIHY_ID = @id
-                    ORDER BY z.NAZEV_ZANRY";
-
-            try
-            {
-                using var conn = new FbConnection(_connString);
-                await conn.OpenAsync();
-                using var cmd = new FbCommand(sqlZanry, conn);
-                cmd.Parameters.AddWithValue("id", id);
-
-                var names = new List<string>();
-                using var rdr = await cmd.ExecuteReaderAsync();
-                while (await rdr.ReadAsync())
-                    names.Add(rdr.IsDBNull(0) ? "" : rdr.GetString(0));
-
-                ZanryText.Text = names.Any()
-                    ? string.Join(", ", names.Where(s => !string.IsNullOrWhiteSpace(s)))
-                    : "-";
-            }
-            catch
-            {
-                // pri chybe aspon zobrazime '-'
-                ZanryText.Text = "-";
             }
         }
     }

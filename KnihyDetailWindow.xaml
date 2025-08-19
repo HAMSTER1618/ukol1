@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:ukol1"
         mc:Ignorable="d"
         Title="Detail knihy" Height="450" Width="800"
-        Background="#F2F2F2">
+        Background="#F2F2F2"
+        WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
         <SolidColorBrush x:Key="AccentBrush" Color="#C9A99A" />
@@ -72,7 +73,7 @@
 
                         <TextBlock Foreground="{StaticResource TextOnPanel}">
                             <Run Text="Žánry: " />
-                            <Run x:Name="ZanryText" FontWeight="SemiBold" />
+                            <Run x:Name="GenreText" FontWeight="SemiBold" />
                         </TextBlock>
                     </StackPanel>
                 </StackPanel>

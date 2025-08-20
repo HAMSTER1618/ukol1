@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;   // Hyperlink
+using System.Windows.Documents;   //Hyperlink
 using System.Windows.Input;
 using FirebirdSql.Data.FirebirdClient;
 using static ukol1.Manager;
@@ -19,14 +19,14 @@ namespace ukol1
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-            // On startup: clean orphan rows and then load all tables.
+            //On startup: clean orphan rows and then load all tables.
             Loaded += async (s, e) =>
             {
                 await Manager.CleanDbOrphansAsync();
                 await ReloadAllTableAsync();
             };
 
-            // Context menu actions.
+            //Context menu actions.
             CtxEdit.Click += async (s, e) => await EditSelectedAsync();
             CtxDelete.Click += async (s, e) => await DeleteSelectedAsync();
         }
@@ -48,35 +48,13 @@ namespace ukol1
             });
         }
 
-        // Add new Author
-        /*private async void AddAuthor_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new AuthorEditWindow { Owner = this };
-            if (dlg.ShowDialog() == true)
-            {
-                await Manager.InsertAuthorAsync(dlg.LastName, dlg.FirstName);
-                await ReloadAllTableAsync();
-            }
-        }*/
-
         //Add new Book
         private async void AddBook_Click(object sender, RoutedEventArgs e)
         {
-            var win = new KnihyDetailWindowAdd { Owner = this };
+            var win = new BooksDetailWindowAdd { Owner = this };
             if (win.ShowDialog() == true)
                 await ReloadAllTableAsync();
         }
-
-        // Add new Publisher
-        /*private async void AddPublisher_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new PublisherEditWindow { Owner = this };
-            if (dlg.ShowDialog() == true)
-            {
-                await Manager.InsertPublisherAsync(dlg.PublisherName, dlg.City);
-                await ReloadAllTableAsync();
-            }
-        }*/
 
         private async void DeleteBook_Click(object sender, RoutedEventArgs e) => await DeleteSelectedAsync();
 
@@ -88,7 +66,7 @@ namespace ukol1
             var id = GetSelectedBookID();
             if (id == null) return;
 
-            // Try to get a human-friendly name for the confirmation dialog.
+            //Try to get a human-friendly name for the confirmation dialog.
             string? name = TableBooks.SelectedItem switch
             {
                 DataRowView drv => drv["Nazev"] as string,
@@ -119,7 +97,7 @@ namespace ukol1
             var id = GetSelectedBookID();
             if (id == null) return;
 
-            var win = new KnihyDetailWindowAdd(id.Value) { Owner = this };
+            var win = new BooksDetailWindowAdd(id.Value) { Owner = this };
             if (win.ShowDialog() == true)
                 await ReloadAllTableAsync();
         }
@@ -137,7 +115,7 @@ namespace ukol1
             if (item is Manager.BookRow br)
                 return br.ID;
 
-            // Fallback via reflection if some other type appears.
+            //Fallback via reflection if some other type appears.
             var prop = item.GetType().GetProperty("ID");
             var val = prop?.GetValue(item);
             return val != null ? Convert.ToInt32(val) : (int?)null;
@@ -154,13 +132,13 @@ namespace ukol1
             }
             else return;
 
-            // Open details and then reload.
-            var win = new KnihyDetailWindow(id) { Owner = this };
+            //Open details and then reload.
+            var win = new BooksDetailWindow(id) { Owner = this };
             win.ShowDialog();
             await ReloadAllTableAsync();
         }
 
-        // Open details for the currently selected row (re-entrancy-safe).
+        //Open details for the currently selected row (re-entrancy-safe).
 
         private async Task OpenDetailsForSelected()
         {
@@ -170,7 +148,7 @@ namespace ukol1
             _openingDetails = true;
             try
             {
-                var win = new KnihyDetailWindow(id.Value) { Owner = this };
+                var win = new BooksDetailWindow(id.Value) { Owner = this };
                 win.ShowDialog();
                 await ReloadAllTableAsync();
             }
@@ -187,16 +165,16 @@ namespace ukol1
             _isReloading = true;
             try
             {
-                // Books: load as a typed list and force grid redraw.
+                //Books: load as a typed list and force grid redraw.
                 var books = await Manager.GetBooksAsync();
                 TableBooks.ItemsSource = null;
                 TableBooks.ItemsSource = books;
 
-                // Authors and publishers: load as DataView on a background thread.
+                //Authors and publishers: load as DataView on a background thread.
                 TableAuthor.ItemsSource = await LoadDataViewAsync("SELECT * FROM AUTORY ORDER BY ID");
                 TablePubl.ItemsSource = await LoadDataViewAsync("SELECT * FROM NAKLADATELSTVI ORDER BY ID");
 
-                // Reset selection and buttons state.
+                //Reset selection and buttons state.
                 TableBooks.SelectedItem = null;
                 BtnAddBook.IsEnabled = true;
                 BtnEditBook.IsEnabled = false;
@@ -208,7 +186,48 @@ namespace ukol1
             }
         }
 
-        // Edit Author row
+        private async void RowDeleteAuthorRow_Click(object sender, RoutedEventArgs e)
+        {
+            // Expect DataRowView in Tag from the grid row
+            if (sender is FrameworkElement fe && fe.Tag is DataRowView row)
+            {
+                int id = Convert.ToInt32(row["ID"]);
+                string surname = row["PRIJMENI"]?.ToString() ?? "";
+                string name = row["JMENO"]?.ToString() ?? "";
+
+                // Confirm destructive action
+                if (MessageBox.Show(
+                    $"Opravdu chcete smazat autora '{surname} {name}'?\nVšechny jeho knihy budou také smazány.",
+                    "Potvrzení", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
+
+                await Manager.DeleteAuthorWithBooksAsync(id);
+                await ReloadAllTableAsync();
+            }
+        }
+
+        private async void RowDeletePublisherRow_Click(object sender, RoutedEventArgs e)
+        {
+            // Expect DataRowView in Tag from the grid row
+            if (sender is FrameworkElement fe && fe.Tag is DataRowView row)
+            {
+                int id = Convert.ToInt32(row["ID"]);
+                string n = row["NAZEV_FIRMY"]?.ToString() ?? "";
+                string m = row["MESTO"]?.ToString() ?? "";
+
+                // Confirm change: books stay, publisher field becomes NULL
+                if (MessageBox.Show(
+                    $"Smazat nakladatelství '{n}{(string.IsNullOrWhiteSpace(m) ? "" : ", " + m)}'?\n" +
+                    "Knihy zůstanou, pole vydavatele bude vyprázdněno.",
+                    "Potvrzení", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
+
+                await Manager.DeletePublisherAndDetachBooksAsync(id);
+                await ReloadAllTableAsync();
+            }
+        }
+
+        //Edit Author row
         private async void RowEditAuthorRow_Click(object sender, RoutedEventArgs e)
         {
             var drv = (sender as FrameworkElement)?.Tag as DataRowView
@@ -227,18 +246,18 @@ namespace ukol1
             }
         }
 
-        // Left-click on a row: open details.
+        //Left-click on a row: open details.
         private async void RowEditBook_Click(object sender, RoutedEventArgs e)
         {
             var rowItem = (sender as FrameworkElement)?.Tag;
             if (rowItem == null) return;
 
-            // temporarily select that row and reuse existing logic
+            //temporarily select that row and reuse existing logic
             TableBooks.SelectedItem = rowItem;
             await EditSelectedAsync();
         }
 
-        // Edit Publisher row (name + city)
+        //Edit Publisher row (name + city)
         private async void RowEditPublisherRow_Click(object sender, RoutedEventArgs e)
         {
             var drv = (sender as FrameworkElement)?.Tag as DataRowView

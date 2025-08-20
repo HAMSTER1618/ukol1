@@ -10,7 +10,7 @@ using FirebirdSql.Data.FirebirdClient;
 
 namespace ukol1
 {
-    public partial class KnihyDetailWindowAdd : Window
+    public partial class BooksDetailWindowAdd : Window
     {
         private readonly List<string> _allCities = new();
         private readonly List<string> _allGenres = new();
@@ -23,15 +23,15 @@ namespace ukol1
         private int _genresIndex = -1;
         private string? _selectedFilePath;
 
-        // Window for adding/editing a book
-        public KnihyDetailWindowAdd(int? knihyID = null)
+        //Window for adding/editing a book
+        public BooksDetailWindowAdd(int? knihyID = null)
         {
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             DataContext = this;
 
             _knihyID = knihyID;
-            // UI title (keep Czech text)
+            //UI title (keep Czech text)
             this.Title = _knihyID.HasValue ? "Upravit knihu" : "Přidání nové knihy";
 
             if (_knihyID.HasValue)
@@ -39,27 +39,27 @@ namespace ukol1
 
             LoadSuggestions();
 
-            // Type-ahead (publisher/city)
+            //Type-ahead (publisher/city)
             PublBox.TextChanged += PublBox_TextChanged;
             PublBox.PreviewKeyDown += PublBox_PreviewKeyDown;
 
-            // Type-ahead (genres)
+            //Type-ahead (genres)
             GenreBox.TextChanged += GenreBox_TextChanged;
             GenreBox.PreviewKeyDown += GenreBox_PreviewKeyDown;
 
-            // Numeric-only fields
+            //Numeric-only fields
             HookNumericOnly(YearPrintBox);
             HookNumericOnly(NumberOfPagesBox);
 
-            // Remove error styling when user starts typing
+            //Remove error styling when user starts typing
             NameBooksBox.TextChanged += RemoveErrorOnChange;
             AuthorBox.TextChanged += RemoveErrorOnChange;
         }
 
-        // Root folder for cover images
+        //Root folder for cover images
         private static string CoversRoot => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "covers");
 
-        // UI helper: clear error styling
+        //UI helper: clear error styling
         private static void ClearError(Border border, TextBox tb)
         {
             border.ClearValue(BorderBrushProperty);
@@ -67,10 +67,10 @@ namespace ukol1
             tb.ClearValue(BackgroundProperty);
         }
 
-        // Only digits or empty string are allowed
+        //Only digits or empty string are allowed
         private static bool IsDigitsOrEmpty(string? s) => string.IsNullOrWhiteSpace(s) || s!.All(char.IsDigit);
 
-        // Produce a file-system-safe file name
+        //Produce a file-system-safe file name
         private static string MakeSafeFileName(string name)
         {
             var invalid = Path.GetInvalidFileNameChars();
@@ -78,7 +78,7 @@ namespace ukol1
             return string.IsNullOrWhiteSpace(cleaned) ? "cover" : cleaned;
         }
 
-        // UI helper: mark field as invalid
+        //UI helper: mark field as invalid
         private static void MarkError(Border border, TextBox tb)
         {
             border.BorderBrush = Brushes.Red;
@@ -86,19 +86,19 @@ namespace ukol1
             tb.Background = new SolidColorBrush(Color.FromRgb(255, 240, 240));
         }
 
-        // Parse publisher input in the format "Company, City"
-        private static void ParsePubl(string input, out string nazev, out string mesto)
+        //Parse publisher input in the format "Company, City"
+        private static void ParsePubl(string input, out string nameFirm, out string city)
         {
-            nazev = ""; mesto = "";
+            nameFirm = ""; city = "";
             if (string.IsNullOrWhiteSpace(input)) return;
             var parts = input.Split(new[] { ',' }, 2, StringSplitOptions.RemoveEmptyEntries)
                              .Select(part => part.Trim())
                              .ToArray();
-            if (parts.Length > 0) nazev = parts[0];
-            if (parts.Length > 1) mesto = parts[1];
+            if (parts.Length > 0) nameFirm = parts[0];
+            if (parts.Length > 1) city = parts[1];
         }
 
-        // Place popup under the text caret
+        //Place popup under the text caret
         private static void PlacePopupUnderCaret(Popup popup, TextBox tb)
         {
             try
@@ -118,7 +118,7 @@ namespace ukol1
             }
         }
 
-        // Split full author string into surname (last token) and given name (rest)
+        //Split full author string into surname (last token) and given name (rest)
         private static void SplitAuthor(string full, out string prijmeni, out string jmeno)
         {
             prijmeni = ""; jmeno = "";
@@ -129,7 +129,7 @@ namespace ukol1
             jmeno = string.Join(" ", parts.Take(parts.Length - 1));
         }
 
-        // Copy cover file to the app storage and return a DB-relative path
+        //Copy cover file to the app storage and return a DB-relative path
         private static string StoreCoverFile(string sourcePath, int bookId)
         {
             Directory.CreateDirectory(CoversRoot);
@@ -142,7 +142,7 @@ namespace ukol1
             if (string.IsNullOrWhiteSpace(ext)) ext = ".jpg";
             ext = ext.ToLowerInvariant();
 
-            // Build unique name
+            //Build unique name
             string targetName = $"{baseName}{bookId}{ext}";
             string targetRel = Path.Combine("covers", targetName).Replace('\\', '/');
             string targetAbs = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetRel);
@@ -163,7 +163,7 @@ namespace ukol1
             return targetRel;
         }
 
-        // Convert DB-stored relative path to absolute file system path
+        //Convert DB-stored relative path to absolute file system path
         private static string? ToAbsolutePath(string? dbPath)
         {
             if (string.IsNullOrWhiteSpace(dbPath)) return null;
@@ -172,7 +172,7 @@ namespace ukol1
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
         }
 
-        // Apply selected city from the popup into publisher textbox
+        //Apply selected city from the popup into publisher textbox
         private void ApplyCitySuggestions(string city)
         {
             var text = PublBox.Text ?? "";
@@ -192,7 +192,7 @@ namespace ukol1
             CityPopup.IsOpen = false;
         }
 
-        // Apply selected genre from the popup into genre textbox
+        //Apply selected genre from the popup into genre textbox
         private void ApplyGenreSuggestions(string genre)
         {
             var text = GenreBox.Text ?? "";
@@ -207,14 +207,14 @@ namespace ukol1
                 GenreBox.Text = genre;
             }
 
-            // Put caret at the end and keep focus in the textbox
+            //Put caret at the end and keep focus in the textbox
             GenreBox.CaretIndex = GenreBox.Text.Length;
             GenreBox.Focus();
             Keyboard.Focus(GenreBox);
             GenrePopup.IsOpen = false;
         }
 
-        // Cancel/close the dialog
+        //Cancel/close the dialog
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
@@ -257,7 +257,7 @@ namespace ukol1
             }
         }
 
-        // Type-ahead for genres
+        //Type-ahead for genres
         private void GenreBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             var text = GenreBox.Text ?? "";
@@ -294,23 +294,23 @@ namespace ukol1
                 ApplyGenreSuggestions(genre);
         }
 
-        // Hide numeric error popup for the given textbox
+        //Hide numeric error popup for the given textbox
         private void HideNumErrorFor(TextBox tb)
         {
             if (tb == YearPrintBox) RokErrPopup.IsOpen = false;
             else if (tb == NumberOfPagesBox) StranErrPopup.IsOpen = false;
         }
 
-        // Make a textbox accept only digits (typing and paste)
+        //Make a textbox accept only digits (typing and paste)
         private void HookNumericOnly(TextBox tb)
         {
-            tb.PreviewTextInput += NumericOnly_PreviewTextInput;   // typing
-            tb.PreviewKeyDown += NumericOnly_PreviewKeyDown;       // block Space
-            DataObject.AddPastingHandler(tb, NumericOnly_OnPaste); // paste
-            tb.TextChanged += RemoveErrorOnChange;                 // hide error on valid input
+            tb.PreviewTextInput += NumericOnly_PreviewTextInput;   //typing
+            tb.PreviewKeyDown += NumericOnly_PreviewKeyDown;       //block Space
+            DataObject.AddPastingHandler(tb, NumericOnly_OnPaste); //paste
+            tb.TextChanged += RemoveErrorOnChange;                 //hide error on valid input
         }
 
-        // Load existing values when editing
+        //Load existing values when editing
         private void LoadFields(int id)
         {
             using var conn = new FbConnection(_connString);
@@ -341,8 +341,8 @@ namespace ukol1
                     YearPrintBox.Text = r.IsDBNull(1) ? "" : r.GetInt32(1).ToString();
                     NumberOfPagesBox.Text = r.IsDBNull(2) ? "" : r.GetInt32(2).ToString();
 
-                    var sr = r.IsDBNull(3) ? "" : r.GetString(3); // surname
-                    var nm = r.IsDBNull(4) ? "" : r.GetString(4); // name
+                    var sr = r.IsDBNull(3) ? "" : r.GetString(3); //surname
+                    var nm = r.IsDBNull(4) ? "" : r.GetString(4); //name
                     AuthorBox.Text = (sr + " " + nm).Trim();
 
                     var firm = r.IsDBNull(5) ? "" : r.GetString(5);
@@ -368,7 +368,7 @@ namespace ukol1
             }
         }
 
-        // Load suggestions for popups (cities, genres)
+        //Load suggestions for popups (cities, genres)
         private void LoadSuggestions()
         {
             try
@@ -403,7 +403,7 @@ namespace ukol1
             catch { /* ignore */ }
         }
 
-        // Block paste if it contains non-digit characters
+        //Block paste if it contains non-digit characters
         private void NumericOnly_OnPaste(object sender, DataObjectPastingEventArgs e)
         {
             var tb = (TextBox)sender;
@@ -423,7 +423,7 @@ namespace ukol1
             }
         }
 
-        // Block Space key (safety)
+        //Block Space key (safety)
         private void NumericOnly_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Space)
@@ -433,23 +433,23 @@ namespace ukol1
             }
         }
 
-        // Allow only 0–9 on typing
+        //Allow only 0–9 on typing
         private void NumericOnly_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             var tb = (TextBox)sender;
             bool ok = e.Text.All(char.IsDigit);
             if (!ok)
             {
-                e.Handled = true; // prevent character from being entered
+                e.Handled = true; //prevent character from being entered
                 ShowNumErrorFor(tb, "Lze zadat pouze číslice.");
             }
             else
             {
-                HideNumErrorFor(tb); // hide error when input becomes valid
+                HideNumErrorFor(tb); //hide error when input becomes valid
             }
         }
 
-        // Pick cover file (UI text stays in Czech)
+        //Pick cover file (UI text stays in Czech)
         private void PickCover_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -494,7 +494,7 @@ namespace ukol1
             }
         }
 
-        // Type-ahead for publisher city (after the comma)
+        //Type-ahead for publisher city (after the comma)
         private void PublBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             var text = PublBox.Text ?? "";
@@ -527,7 +527,7 @@ namespace ukol1
             }
         }
 
-        // Remove red border when content changes
+        //Remove red border when content changes
         private void RemoveErrorOnChange(object? sender, TextChangedEventArgs e)
         {
             if (sender == YearPrintBox)
@@ -544,7 +544,7 @@ namespace ukol1
             else if (sender == AuthorBox) ClearError(AuthorBorder, AuthorBox);
         }
 
-        // Save/update the book
+        //Save/update the book
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             ClearError(NameBorder, NameBooksBox);
@@ -592,7 +592,7 @@ namespace ukol1
                     ToAbsolutePath,
                     GenreBox.Text);
 
-                DialogResult = true; // tell the main window to refresh
+                DialogResult = true; //tell the main window to refresh
                 Close();
             }
             catch (Exception ex)
@@ -602,7 +602,7 @@ namespace ukol1
             }
         }
 
-        // Show numeric error popups immediately (typing space, non-digit, paste)
+        //Show numeric error popups immediately (typing space, non-digit, paste)
         private void ShowNumErrorFor(TextBox tb, string message)
         {
             if (tb == YearPrintBox)

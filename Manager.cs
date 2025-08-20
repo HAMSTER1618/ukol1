@@ -1,4 +1,4 @@
-﻿// Manager.cs
+﻿//Manager.cs
 using System.Configuration;
 using System.Data;
 using System.IO;
@@ -8,20 +8,20 @@ namespace ukol1
 {
     public static class Manager
     {
-        // Single place for connection string
+        //Single place for connection string
         private static readonly string _connString =
             ConfigurationManager.ConnectionStrings["KNIHOVNA2"].ConnectionString;
 
         public static string ConnectionString => _connString;
 
-        // Removes orphaned rows: authors, publishers, and genres not referenced by any book.
+        //Removes orphaned rows: authors, publishers, and genres not referenced by any book.
         public static void CleanDbOrphans()
         {
             using var conn = CreateConnection();
             conn.Open();
             using var tx = conn.BeginTransaction();
 
-            // authors without books
+            //authors without books
             using (var cmd = new FbCommand(@"
                 DELETE FROM AUTORY
                 WHERE NOT EXISTS (
@@ -31,7 +31,7 @@ namespace ukol1
                 cmd.ExecuteNonQuery();
             }
 
-            // publishers without books
+            //publishers without books
             using (var cmd = new FbCommand(@"
                 DELETE FROM NAKLADATELSTVI
                 WHERE NOT EXISTS (
@@ -41,7 +41,7 @@ namespace ukol1
                 cmd.ExecuteNonQuery();
             }
 
-            // genres without books
+            //genres without books
             using (var cmd = new FbCommand(@"
                 DELETE FROM ZANRY
                 WHERE NOT EXISTS (
@@ -54,12 +54,43 @@ namespace ukol1
             tx.Commit();
         }
 
-        // ===================== Public API =====================
+        //===================== Public API =====================
 
         public static Task CleanDbOrphansAsync() => Task.Run(CleanDbOrphans);
 
         //Deletes a book and related data (book-genre links, details, cover file).
         //Also removes orphaned author/publisher afterwards if they are no longer referenced.
+
+        public static async Task DeleteAuthorWithBooksAsync(int authorId)
+        {
+            // 1) Collect all book IDs by this author
+            var bookIds = new List<int>();
+            await using (var conn = new FbConnection(ConnectionString))
+            {
+                await conn.OpenAsync().ConfigureAwait(false);
+                await using var cmd = new FbCommand(
+                    "SELECT ID FROM KNIHY WHERE AUTOR_ID=@aid", conn);
+                cmd.Parameters.AddWithValue("aid", authorId);
+
+                await using var r = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+                while (await r.ReadAsync().ConfigureAwait(false))
+                    bookIds.Add(r.GetInt32(0));
+            }
+
+            // 2) Delete each book via existing cascade helper (removes links, details, covers)
+            foreach (var bid in bookIds)
+                await DeleteBookCascadeAsync(bid).ConfigureAwait(false);
+
+            // 3) Finally remove the author record (may already be removed as orphan)
+            await using (var conn2 = new FbConnection(ConnectionString))
+            {
+                await conn2.OpenAsync().ConfigureAwait(false);
+                await using var cmd2 = new FbCommand(
+                    "DELETE FROM AUTORY WHERE ID=@id", conn2);
+                cmd2.Parameters.AddWithValue("id", authorId);
+                await cmd2.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+        }
 
         public static async Task DeleteBookCascadeAsync(string connStr, int bookID, Func<string?, string?> toAbsolutePath)
         {
@@ -82,11 +113,11 @@ namespace ukol1
 
             await tx.CommitAsync().ConfigureAwait(false);
 
-            // delete cover file (best-effort)
+            //delete cover file (best-effort)
             var abs = toAbsolutePath?.Invoke(coverPath) ?? Db.PathUtils.ToAbsolutePath(coverPath);
             Db.TryDeleteFile(abs);
 
-            // remove orphan author
+            //remove orphan author
             if (authorID.HasValue)
             {
                 using var c = new FbConnection(connStr);
@@ -97,7 +128,7 @@ namespace ukol1
                     await Db.NonQueryAsync(c, null, "DELETE FROM AUTORY WHERE ID=@aid", ("aid", authorID.Value)).ConfigureAwait(false);
             }
 
-            // remove orphan publisher
+            //remove orphan publisher
             if (pubID.HasValue)
             {
                 using var c = new FbConnection(connStr);
@@ -109,12 +140,37 @@ namespace ukol1
             }
         }
 
-        // ---------------- Book delete (cascade) ----------------
+        //---------------- Book delete (cascade) ----------------
         //Shortcut that uses Manager's connection string and the default <see cref="ToAbsolute"/> resolver.
         public static Task DeleteBookCascadeAsync(int bookID)
             => DeleteBookCascadeAsync(_connString, bookID, ToAbsolute);
 
-        // ---------------- Book details (async) ----------------
+        public static async Task DeletePublisherAndDetachBooksAsync(int publisherId)
+        {
+            await using var conn = new FbConnection(ConnectionString);
+            await conn.OpenAsync().ConfigureAwait(false);
+            await using var tx = await conn.BeginTransactionAsync().ConfigureAwait(false);
+
+            //Detach this publisher from all books (keep books)
+            await using (var cmd = new FbCommand(
+                "UPDATE KNIHY SET NAKLADATELSTVI_ID=NULL WHERE NAKLADATELSTVI_ID=@nid", conn, tx))
+            {
+                cmd.Parameters.AddWithValue("nid", publisherId);
+                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+
+            //Delete the publisher record
+            await using (var cmd2 = new FbCommand(
+                "DELETE FROM NAKLADATELSTVI WHERE ID=@nid", conn, tx))
+            {
+                cmd2.Parameters.AddWithValue("nid", publisherId);
+                await cmd2.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+
+            await tx.CommitAsync().ConfigureAwait(false);
+        }
+
+        //---------------- Book details (async) ----------------
         //Loads book details by id (async)
         public static async Task<BookDetails?> GetBookDetailsAsync(string connStr, int id)
         {
@@ -202,42 +258,6 @@ namespace ukol1
 
         //Inserts a new book or updates an existing one. Also upserts details and genres,
 
-        //Insert new author and return its ID
-        public static async Task<int> InsertAuthorAsync(string surname, string name, CancellationToken ct = default)
-        {
-            await using var conn = new FbConnection(_connString);
-            await conn.OpenAsync(ct);
-
-            const string sql = @"INSERT INTO AUTORY(PRIJMENI, JMENO)
-                                 VALUES (@p, @j)
-                                 RETURNING ID";
-
-            await using var cmd = new FbCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@p", surname);
-            cmd.Parameters.AddWithValue("@j", name);
-
-            var obj = await cmd.ExecuteScalarAsync(ct);
-            return Convert.ToInt32(obj);
-        }
-
-        //Insert new publisher (name + city) and return its ID
-        public static async Task<int> InsertPublisherAsync(string nameFirm, string city, CancellationToken ct = default)
-        {
-            await using var conn = new FbConnection(_connString);
-            await conn.OpenAsync(ct);
-
-            const string sql = @"INSERT INTO NAKLADATELSTVI(NAZEV_FIRMY, MESTO)
-                                 VALUES (@n, @m)
-                                 RETURNING ID";
-
-            await using var cmd = new FbCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@n", nameFirm);
-            cmd.Parameters.AddWithValue("@m", city);
-
-            var obj = await cmd.ExecuteScalarAsync(ct);
-            return Convert.ToInt32(obj);
-        }
-
         public static async Task<int> SaveOrUpdateBookAsync(
                                             string connStr,
             int? bookID,
@@ -258,7 +278,7 @@ namespace ukol1
             await conn.OpenAsync().ConfigureAwait(false);
             await using var tx = await conn.BeginTransactionAsync().ConfigureAwait(false);
 
-            // normalize text inputs
+            //normalize text inputs
             var jm = (authorName ?? string.Empty).Trim();
             var pr = (authorSurname ?? string.Empty).Trim();
             var pn = (publName ?? string.Empty).Trim();
@@ -268,28 +288,28 @@ namespace ukol1
 
             if (bookID == null)
             {
-                // NEW book: find or create related rows
+                //NEW book: find or create related rows
                 int authorId = await GetOrCreateAuthorAsync(conn, tx, jm, pr).ConfigureAwait(false);
 
                 int? publisherID = null;
                 if (!string.IsNullOrWhiteSpace(pn) || !string.IsNullOrWhiteSpace(pc))
-                    publisherID = await GetOrCreateNakladAsync(conn, tx, pn, pc).ConfigureAwait(false);
+                    publisherID = await GetOrCreatePublAsync(conn, tx, pn, pc).ConfigureAwait(false);
 
-                bookId = await Db.ScalarAsync<int>(conn, tx, "SELECT COALESCE(MAX(ID),0)+1 FROM KNIHY")
-                                 .ConfigureAwait(false);
-
-                await Db.NonQueryAsync(conn, tx, @"
-                    INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN)
-                    VALUES (@id, @nazev, @rok, @aid, @nid, @ps)",
-                    ("id", bookId), ("nazev", name), ("rok", year),
-                    ("aid", authorId), ("nid", publisherID), ("ps", numberOfPages)).ConfigureAwait(false);
+                //Insert without explicit ID; Firebird identity will generate it.
+                bookId = await Db.ScalarAsync<int>(conn, tx, @"
+                        INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN)
+                        VALUES (@nazev, @rok, @aid, @nid, @ps)
+                        RETURNING ID",
+                    ("nazev", name), ("rok", year),
+                    ("aid", authorId), ("nid", publisherID), ("ps", numberOfPages)
+                ).ConfigureAwait(false);
             }
             else
             {
-                // EDIT existing book: keep same author/publisher IDs; just update their rows
+                //EDIT existing book: keep same author/publisher IDs; just update their rows
                 bookId = bookID.Value;
 
-                // update book core fields
+                //update book core fields
                 await Db.NonQueryAsync(conn, tx, @"
                     UPDATE KNIHY SET
                       NAZEV=@nazev,
@@ -298,41 +318,41 @@ namespace ukol1
                     WHERE ID=@id",
                     ("id", bookId), ("nazev", name), ("rok", year), ("ps", numberOfPages)).ConfigureAwait(false);
 
-                // get current FKs
+                //get current FKs
                 int currentAuthorId = await Db.ScalarAsync<int>(conn, tx, "SELECT AUTOR_ID FROM KNIHY WHERE ID=@id", ("id", bookId)).ConfigureAwait(false);
                 int? currentPublId = await Db.ScalarAsync<int?>(conn, tx, "SELECT NAKLADATELSTVI_ID FROM KNIHY WHERE ID=@id", ("id", bookId)).ConfigureAwait(false);
 
-                // update existing author (NO create/delete on edit)
+                //update existing author (NO create/delete on edit)
                 await Db.NonQueryAsync(conn, tx,
                     "UPDATE AUTORY SET PRIJMENI=@pr, JMENO=@jm WHERE ID=@aid",
                     ("pr", pr), ("jm", jm), ("aid", currentAuthorId)).ConfigureAwait(false);
 
-                // update publisher per user input:
+                //update publisher per user input:
                 if (string.IsNullOrWhiteSpace(pn) && string.IsNullOrWhiteSpace(pc))
                 {
-                    // user cleared publisher -> detach from book (do NOT delete the publisher row)
+                    //user cleared publisher -> detach from book (do NOT delete the publisher row)
                     await Db.NonQueryAsync(conn, tx,
                         "UPDATE KNIHY SET NAKLADATELSTVI_ID = NULL WHERE ID=@id",
                         ("id", bookId)).ConfigureAwait(false);
                 }
                 else if (currentPublId.HasValue)
                 {
-                    // publisher already linked -> update its row
+                    //publisher already linked -> update its row
                     await Db.NonQueryAsync(conn, tx,
                         "UPDATE NAKLADATELSTVI SET NAZEV_FIRMY=@n, MESTO=@m WHERE ID=@nid",
                         ("n", pn), ("m", pc), ("nid", currentPublId.Value)).ConfigureAwait(false);
                 }
                 else
                 {
-                    // no publisher linked yet -> create/find and link
-                    int newPublId = await GetOrCreateNakladAsync(conn, tx, pn, pc).ConfigureAwait(false);
+                    //no publisher linked yet -> create/find and link
+                    int newPublId = await GetOrCreatePublAsync(conn, tx, pn, pc).ConfigureAwait(false);
                     await Db.NonQueryAsync(conn, tx,
                         "UPDATE KNIHY SET NAKLADATELSTVI_ID=@nid WHERE ID=@id",
                         ("nid", newPublId), ("id", bookId)).ConfigureAwait(false);
                 }
             }
 
-            // details & cover
+            //details & cover
             var oldRelPath = await Db.ScalarAsync<string?>(conn, tx,
                 "SELECT KNIHY_CESTA FROM KNIHY_DETAILY WHERE KNIHYDET_ID=@id", ("id", bookId)).ConfigureAwait(false);
 
@@ -362,8 +382,8 @@ namespace ukol1
             return bookId;
         }
 
-        // ---------------- Books list for main grid ----------------
-        // ---------------- Save / update book ----------------
+        //---------------- Books list for main grid ----------------
+        //---------------- Save / update book ----------------
 
         public static Task<int> SaveOrUpdateBookAsync(
             int? bookID,
@@ -392,10 +412,10 @@ namespace ukol1
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
         }
 
-        // --- AUTHORS ---
+        //--- AUTHORS ---
         public static async Task UpdateAuthorAsync(int id, string surname, string name)
         {
-            // normalize inputs
+            //normalize inputs
             var sr = (surname ?? string.Empty).Trim();
             var nm = (name ?? string.Empty).Trim();
 
@@ -405,7 +425,7 @@ namespace ukol1
             using var cmd = new FbCommand(
                 "UPDATE AUTORY SET PRIJMENI=@p, JMENO=@j WHERE ID=@id", conn);
 
-            // keep parameter names consistent with the rest of the project
+            //keep parameter names consistent with the rest of the project
             cmd.Parameters.AddWithValue("p", sr);
             cmd.Parameters.AddWithValue("j", nm);
             cmd.Parameters.AddWithValue("id", id);
@@ -413,10 +433,10 @@ namespace ukol1
             await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
-        // --- PUBLISHERS ---
+        //--- PUBLISHERS ---
         public static async Task UpdatePublisherAsync(int id, string name, string city)
         {
-            // normalize inputs
+            //normalize inputs
             var n = (name ?? string.Empty).Trim();
             var c = (city ?? string.Empty).Trim();
 
@@ -425,7 +445,7 @@ namespace ukol1
 
             using var cmd = new FbCommand(
                 "UPDATE NAKLADATELSTVI SET NAZEV_FIRMY=@n, MESTO=@m WHERE ID=@id", conn);
-            // keep parameter names consistent with the rest of the project
+            //keep parameter names consistent with the rest of the project
             cmd.Parameters.AddWithValue("n", n);
             cmd.Parameters.AddWithValue("m", c);
             cmd.Parameters.AddWithValue("id", id);
@@ -434,49 +454,63 @@ namespace ukol1
 
         private static FbConnection CreateConnection() => new FbConnection(_connString);
 
-        // ===================== Private helpers =====================
+        //===================== Private helpers =====================
 
-        // find-or-create author
-        private static async Task<int> GetOrCreateAuthorAsync(FbConnection conn, FbTransaction tx, string? name, string? surname)
+        //find-or-create author
+        private static async Task<int> GetOrCreateAuthorAsync(
+            FbConnection conn, FbTransaction tx, string? name, string? surname)
         {
-            var jm = (name ?? string.Empty).Trim();
-            var pr = (surname ?? string.Empty).Trim();
+            var nm = (name ?? string.Empty).Trim();
+            var sr = (surname ?? string.Empty).Trim();
 
+            //Try to find existing author
             var existing = await Db.ScalarAsync<int?>(conn, tx,
-                "SELECT FIRST 1 ID FROM AUTORY WHERE UPPER(TRIM(PRIJMENI))=UPPER(@pr) AND UPPER(TRIM(JMENO))=UPPER(@jm)",
-                ("pr", pr), ("jm", jm)).ConfigureAwait(false);
+                "SELECT FIRST 1 ID FROM AUTORY " +
+                "WHERE UPPER(TRIM(PRIJMENI)) = UPPER(@pr) " +
+                "  AND UPPER(TRIM(JMENO))    = UPPER(@jm)",
+                ("pr", sr), ("jm", nm));
+
             if (existing.HasValue) return existing.Value;
 
-            var newId = await Db.ScalarAsync<int>(conn, tx, "SELECT COALESCE(MAX(ID),0)+1 FROM AUTORY").ConfigureAwait(false);
-            await Db.NonQueryAsync(conn, tx, "INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (@id, @pr, @jm)",
-                ("id", newId), ("pr", pr), ("jm", jm)).ConfigureAwait(false);
+            //Insert without ID; Firebird trigger fills it. Get it back via RETURNING.
+            var newId = await Db.ScalarAsync<int>(conn, tx,
+                "INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES (@pr, @jm) RETURNING ID",
+                ("pr", sr), ("jm", nm));
+
             return newId;
         }
 
-        // find-or-create publisher
-        private static async Task<int> GetOrCreateNakladAsync(FbConnection conn, FbTransaction tx, string? name, string? city)
+        //find-or-create publisher
+        private static async Task<int> GetOrCreatePublAsync(
+            FbConnection conn, FbTransaction tx, string? name, string? city)
         {
             var n = (name ?? string.Empty).Trim();
             var m = (city ?? string.Empty).Trim();
 
             var existing = await Db.ScalarAsync<int?>(conn, tx,
-                "SELECT FIRST 1 ID FROM NAKLADATELSTVI WHERE UPPER(TRIM(NAZEV_FIRMY))=UPPER(@n) AND UPPER(TRIM(COALESCE(MESTO,'')))=UPPER(@m)",
+                "SELECT FIRST 1 ID FROM NAKLADATELSTVI " +
+                "WHERE UPPER(TRIM(NAZEV_FIRMY))=UPPER(@n) " +
+                "  AND UPPER(TRIM(COALESCE(MESTO,'')))=UPPER(@m)",
                 ("n", n), ("m", m)).ConfigureAwait(false);
+
             if (existing.HasValue) return existing.Value;
 
-            var newId = await Db.ScalarAsync<int>(conn, tx, "SELECT COALESCE(MAX(ID),0)+1 FROM NAKLADATELSTVI").ConfigureAwait(false);
-            await Db.NonQueryAsync(conn, tx, "INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (@id, @n, @m)",
-                ("id", newId), ("n", n), ("m", m)).ConfigureAwait(false);
+            //Insert without explicit ID; identity generates it. Read it back.
+            var newId = await Db.ScalarAsync<int>(conn, tx,
+                "INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES (@n, @m) RETURNING ID",
+                ("n", n), ("m", m)).ConfigureAwait(false);
+
             return newId;
         }
 
-        // set genres for a book from a CSV string
+        //set genres for a book from a CSV string
         private static async Task SetGenresAsync(FbConnection conn, FbTransaction tx, int bookId, string? csv)
         {
             await Db.NonQueryAsync(conn, tx, "DELETE FROM KNIHY_ZANRY WHERE KNIHY_ID=@id", ("id", bookId)).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(csv)) return;
 
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var part in csv.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var name = part.Trim();
@@ -487,17 +521,9 @@ namespace ukol1
                     "SELECT FIRST 1 ZANRY_ID FROM ZANRY WHERE UPPER(TRIM(NAZEV_ZANRY))=UPPER(@n)",
                     ("n", name)).ConfigureAwait(false);
 
-                int gid;
-                if (existing.HasValue)
-                {
-                    gid = existing.Value;
-                }
-                else
-                {
-                    gid = await Db.ScalarAsync<int>(conn, tx, "SELECT COALESCE(MAX(ZANRY_ID),0)+1 FROM ZANRY").ConfigureAwait(false);
-                    await Db.NonQueryAsync(conn, tx, "INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (@id, @n)",
-                        ("id", gid), ("n", name)).ConfigureAwait(false);
-                }
+                int gid = existing ?? await Db.ScalarAsync<int>(conn, tx,
+                    "INSERT INTO ZANRY (NAZEV_ZANRY) VALUES (@n) RETURNING ZANRY_ID",
+                    ("n", name)).ConfigureAwait(false);
 
                 await Db.NonQueryAsync(conn, tx,
                     "INSERT INTO KNIHY_ZANRY (KNIHY_ID, ZANRY_ID) VALUES (@bid, @gid)",
@@ -505,7 +531,7 @@ namespace ukol1
             }
         }
 
-        // insert or update details row
+        //insert or update details row
         private static async Task UpsertDetailsAsync(FbConnection conn, FbTransaction tx, int bookId, string? desc, string? relativePath)
         {
             var updated = await Db.NonQueryAsync(conn, tx,
@@ -520,7 +546,7 @@ namespace ukol1
             }
         }
 
-        // ===================== DTOs =====================
+        //===================== DTOs =====================
 
         public sealed class BookDetails
         {
@@ -543,11 +569,11 @@ namespace ukol1
             public int? Rok { get; set; }
         }
 
-        // ===================== Low-level DB helpers =====================
+        //===================== Low-level DB helpers =====================
 
         internal static class Db
         {
-            // Create FbCommand with parameters
+            //Create FbCommand with parameters
             public static FbCommand Cmd(FbConnection conn, FbTransaction? tx, string sql,
                                         params (string Name, object? Value)[] ps)
             {
@@ -557,7 +583,7 @@ namespace ukol1
                 return cmd;
             }
 
-            // ExecuteNonQuery
+            //ExecuteNonQuery
             public static int NonQuery(FbConnection conn, FbTransaction? tx, string sql,
                                        params (string, object?)[] ps)
             {
@@ -572,7 +598,7 @@ namespace ukol1
                 return await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
 
-            // ExecuteReader single-row + mapper (async)
+            //ExecuteReader single-row + mapper (async)
             public static async Task<T?> ReadSingleAsync<T>(FbConnection conn, FbTransaction? tx, string sql,
                                                             Func<IDataRecord, T> map,
                                                             params (string, object?)[] ps)
@@ -582,7 +608,7 @@ namespace ukol1
                 return await r.ReadAsync().ConfigureAwait(false) ? map(r) : default;
             }
 
-            // ExecuteScalar that returns default for null/DBNull
+            //ExecuteScalar that returns default for null/DBNull
             public static T? Scalar<T>(FbConnection conn, FbTransaction? tx, string sql,
                                        params (string, object?)[] ps)
             {
@@ -603,14 +629,14 @@ namespace ukol1
                 return (T)Convert.ChangeType(o, t);
             }
 
-            // Safe file delete (best-effort)
+            //Safe file delete (best-effort)
             public static void TryDeleteFile(string? absPath)
             {
                 if (!string.IsNullOrWhiteSpace(absPath) && File.Exists(absPath))
                 { try { File.Delete(absPath); } catch { /* ignore */ } }
             }
 
-            // Relative to absolute path
+            //Relative to absolute path
             public static class PathUtils
             {
                 public static string? ToAbsolutePath(string? dbPath, string? baseDir = null)

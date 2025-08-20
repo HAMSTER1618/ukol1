@@ -15,20 +15,21 @@
                 <ColumnDefinition Width="260" />
             </Grid.ColumnDefinitions>
 
-            <Label Grid.Row="0" Grid.Column="0" Content="Příjmení:" Style="{StaticResource DialogLabel}" />
+            <Label Grid.Row="0" Grid.Column="0" Content="Příjmení:" Style="{StaticResource DialogLabel}" FontSize="14" />
             <TextBox x:Name="LastNameBox" Grid.Row="0" Grid.Column="1" Style="{StaticResource DialogTextBox}" />
 
-            <Label Grid.Row="1" Grid.Column="0" Content="Jméno:" Style="{StaticResource DialogLabel}" />
+            <Label Grid.Row="1" Grid.Column="0" Content="Jméno:" Style="{StaticResource DialogLabel}" FontSize="14" />
             <TextBox x:Name="FirstNameBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource DialogTextBox}" />
 
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal"
                   HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button Content="Cancel" IsCancel="True"
+                <Button Content="Zrušit" Width="80"
+                    Margin="5" IsCancel="True"
                         Style="{StaticResource PrimaryButton}"
-                        Width="50" />
-                <Button Content="OK" IsDefault="True" Click="Ok_Click"
+                        Height="20" />
+                <Button Content="Uložit" Width="80" Margin="5" IsDefault="True" Click="Ok_Click"
                         Style="{StaticResource PrimaryButton}"
-                        Width="50" />
+                         Height="20" />
             </StackPanel>
         </Grid>
     </Border>

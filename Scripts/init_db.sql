@@ -45,76 +45,76 @@ CREATE TABLE KNIHY_ZANRY (
 	
 	
 -- Insert into AUTORY
-INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (1, 'Haig', 'Matt');
-INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (2, 'Hoover', 'Colleen');
-INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (3, 'Jenkins Reid', 'Taylor');
-INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (4, 'Henry', 'Emily');
-INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (5, 'Garmus', 'Bonnie');
-INSERT INTO AUTORY (ID, PRIJMENI, JMENO) VALUES (6, 'Weir', 'Andy');
+INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES ('Haig', 'Matt');
+INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES ('Hoover', 'Colleen');
+INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES ('Jenkins Reid', 'Taylor');
+INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES ('Henry', 'Emily');
+INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES ('Garmus', 'Bonnie');
+INSERT INTO AUTORY (PRIJMENI, JMENO) VALUES ('Weir', 'Andy');
 
 -- Insert into NAKLADATELSTI
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (1, 'Canongate Books', 'Edinburgh');
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (2, 'HarperCollins', 'New York');
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (3, 'Atria Books', 'New York');
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (4, 'Ballantine Books', 'New York');
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (5, 'Grand Central Publishing', 'New York');
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (6, 'Doubleday', 'London');
-INSERT INTO NAKLADATELSTVI (ID, NAZEV_FIRMY, MESTO) VALUES (7, 'Crown Publishing Group', 'New York');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('Canongate Books', 'Edinburgh');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('HarperCollins', 'New York');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('Atria Books', 'New York');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('Ballantine Books', 'New York');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('Grand Central Publishing', 'New York');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('Doubleday', 'London');
+INSERT INTO NAKLADATELSTVI (NAZEV_FIRMY, MESTO) VALUES ('Crown Publishing Group', 'New York');
 
 -- Insert into ZANRY
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (1, 'TikTok');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (2, 'fantasy');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (3, 'magicky');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (4, 'realismus');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (5, 'feel good');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (6, 'sebevrazda');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (7, 'psychoterapie');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (8, 'nadeje');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (9, 'new adult');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (10, 'netflix');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (11, 'americka literatura');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (12, 'romantika');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (13, 'domaci nasili');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (14, 'laska');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (15, 'nasili');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (16, 'rodicovstvi');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (17, 'opatrovnictvi');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (18, 'lgbtq+');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (19, 'hollywood');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (20, 'historicke romany');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (21, 'tajemstvi');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (22, 'bisexualita');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (23, 'spisovatelky');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (24, 'Goodreads Choice Awards');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (25, 'thriller');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (26, 'napeti');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (27, 'enemies to lovers');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (28, 'slow burn');
-INSERT INTO ZANRY (ZANRY_ID, NAZEV_ZANRY) VALUES (29, 'Londyn');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('TikTok');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('fantasy');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('magicky');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('realismus');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('feel good');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('sebevrazda');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('psychoterapie');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('nadeje');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('new adult');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('netflix');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('americka literatura');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('romantika');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('domaci nasili');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('laska');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('nasili');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('rodicovstvi');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('opatrovnictvi');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('lgbtq+');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('hollywood');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('historicke romany');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('tajemstvi');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('bisexualita');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('spisovatelky');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('Goodreads Choice Awards');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('thriller');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('napeti');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('enemies to lovers');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('slow burn');
+INSERT INTO ZANRY (NAZEV_ZANRY) VALUES ('Londyn');
 
 -- Insert into KNIHY
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (1, 'The Midnight Library', 2020, 1, 1, 304);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (2, 'How to Stop Time', 2017, 1, 2, 325);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (3, 'It Ends With Us', 2016, 2, 3, 384);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (4, 'It Starts With Us', 2022, 2, 3, 323);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (5, 'The Seven Husbands of Evelyn Hugo', 2017, 3, 4, 389);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (6, 'Daisy Jones & The Six', 2019, 3, 4, 368);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (7, 'Verity', 2018, 2, 5, 336);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (8, 'Book Lovers', 2022, 4, 3, 384);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (9, 'Lessons in Chemistry', 2022, 5, 6, 400);
-INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES (10, 'Project Hail Mary', 2021, 6, 7, 476);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('The Midnight Library', 2020, 1, 1, 304);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('How to Stop Time', 2017, 1, 2, 325);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('It Ends With Us', 2016, 2, 3, 384);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('It Starts With Us', 2022, 2, 3, 323);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('The Seven Husbands of Evelyn Hugo', 2017, 3, 4, 389);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('Daisy Jones & The Six', 2019, 3, 4, 368);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('Verity', 2018, 2, 5, 336);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('Book Lovers', 2022, 4, 3, 384);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('Lessons in Chemistry', 2022, 5, 6, 400);
+INSERT INTO KNIHY (NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN) VALUES ('Project Hail Mary', 2021, 6, 7, 476);
 
 -- Insert into KNIHY_DETAILY
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (1, 'Nora''s life has been going from bad to worse.', 'Images/The Midnight Library.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (2, 'HOW MANY LIFETIMES DOES IT TAKE TO LEARN HOW TO LIVE? Tom Hazard has a dangerous secret. He may look like an ordinary 41-year-old history teacher, but he''s been alive for centuries.', 'Images/How to Stop Time.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (3, 'SOMETIMES THE ONE WHO LOVES YOU IS THE ONE WHO HURTS YOU THE MOST. Lily hasn''t always had it easy, but that''s never stopped her from working hard for the life she wants.', 'Images/It Ends With Us.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (4, 'Before It Ends with Us, it started with Atlas. Multi-million copy bestselling author Colleen Hoover tells fan favourite Atlas''s side of the story and shares what comes next in this long-anticipated sequel', 'Images/It Starts With Us.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (5, 'A stunning hardcover limited special edition of Taylor Jenkins Reid''s sensational New York Times bestselling novel.', 'Images/The Seven Husbands of Evelyn Hugo.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (6, 'Everybody knows Daisy Jones and the Six. From the moment Daisy walked barefoot on to the stage at the Whisky, she and the band were a sensation.', 'Images/Daisy Jones & The Six.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (7, 'Lowen Ashleigh is a struggling writer on the brink of financial ruin when she accepts the job offer of a lifetime.', 'Images/Verity.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (8, 'Nora is a cut-throat literary agent at the top of her game. Her whole life is books. Charlie is an editor with a gift for creating bestsellers.', 'Images/Book Lovers.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (9, 'Your ability to change everything - including yourself - starts hereChemist Elizabeth Zott is not your average woman. In fact, Elizabeth Zott would be the first to point out that there is no such thing.', 'Images/Lessons in Chemistry.png');  
-INSERT INTO KNIHY_DETAILY (KNIHYDET_ID, POPIS_KNIHY, KNIHY_CESTA) VALUES (10, 'A lone astronaut. An impossible mission. An ally he never imagined. Ryland Grace is the sole survivor on a desperate, last-chance mission - and if he fails, humanity and the earth itself will perish. Except that right now, he doesn''t know that.', 'Images/Project Hail Mary.png');
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('Nora''s life has been going from bad to worse.', 'Images/The Midnight Library.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('HOW MANY LIFETIMES DOES IT TAKE TO LEARN HOW TO LIVE? Tom Hazard has a dangerous secret. He may look like an ordinary 41-year-old history teacher, but he''s been alive for centuries.', 'Images/How to Stop Time.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('SOMETIMES THE ONE WHO LOVES YOU IS THE ONE WHO HURTS YOU THE MOST. Lily hasn''t always had it easy, but that''s never stopped her from working hard for the life she wants.', 'Images/It Ends With Us.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('Before It Ends with Us, it started with Atlas. Multi-million copy bestselling author Colleen Hoover tells fan favourite Atlas''s side of the story and shares what comes next in this long-anticipated sequel', 'Images/It Starts With Us.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('A stunning hardcover limited special edition of Taylor Jenkins Reid''s sensational New York Times bestselling novel.', 'Images/The Seven Husbands of Evelyn Hugo.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('Everybody knows Daisy Jones and the Six. From the moment Daisy walked barefoot on to the stage at the Whisky, she and the band were a sensation.', 'Images/Daisy Jones & The Six.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('Lowen Ashleigh is a struggling writer on the brink of financial ruin when she accepts the job offer of a lifetime.', 'Images/Verity.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('Nora is a cut-throat literary agent at the top of her game. Her whole life is books. Charlie is an editor with a gift for creating bestsellers.', 'Images/Book Lovers.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ('Your ability to change everything - including yourself - starts hereChemist Elizabeth Zott is not your average woman. In fact, Elizabeth Zott would be the first to point out that there is no such thing.', 'Images/Lessons in Chemistry.png');  
+INSERT INTO KNIHY_DETAILY (POPIS_KNIHY, KNIHY_CESTA) VALUES ( 'A lone astronaut. An impossible mission. An ally he never imagined. Ryland Grace is the sole survivor on a desperate, last-chance mission - and if he fails, humanity and the earth itself will perish. Except that right now, he doesn''t know that.', 'Images/Project Hail Mary.png');
 
 -- Insert into KNIHY_ZANRY
 INSERT INTO KNIHY_ZANRY (KNIHY_ID, ZANRY_ID) VALUES (1, 1);
@@ -166,4 +166,7 @@ INSERT INTO KNIHY_ZANRY (KNIHY_ID, ZANRY_ID) VALUES (9, 24);
 INSERT INTO KNIHY_ZANRY (KNIHY_ID, ZANRY_ID) VALUES (9, 5);
 INSERT INTO KNIHY_ZANRY (KNIHY_ID, ZANRY_ID) VALUES (10, 2);
 INSERT INTO KNIHY_ZANRY (KNIHY_ID, ZANRY_ID) VALUES (10, 25);
+
+
+
 	

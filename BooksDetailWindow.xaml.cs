@@ -5,7 +5,7 @@ using FirebirdSql.Data.FirebirdClient;
 
 namespace ukol1
 {
-    public partial class KnihyDetailWindow : Window
+    public partial class BooksDetailWindow : Window
     {
         private const string SqlGenres = @"
             SELECT z.NAZEV_ZANRY
@@ -14,14 +14,14 @@ namespace ukol1
             WHERE bg.KNIHY_ID = @id
             ORDER BY z.NAZEV_ZANRY";
 
-        public KnihyDetailWindow(int bookID)
+        public BooksDetailWindow(int bookID)
         {
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Loaded += async (_, __) => await LoadAsync(bookID);
         }
 
-        // load book details and fill the UI
+        //load book details and fill the UI
         private async Task LoadAsync(int id)
         {
             var d = await Manager.GetBookDetailsAsync(id);
@@ -33,17 +33,17 @@ namespace ukol1
                 return;
             }
 
-            NazevText.Text = string.IsNullOrWhiteSpace(d.Nazev) ? "-" : d.Nazev;
-            AutorText.Text = string.IsNullOrWhiteSpace(d.Autor) ? "-" : d.Autor;
-            RokText.Text = d.Rok?.ToString() ?? "-";
-            PocetStranText.Text = d.PocetStran?.ToString() ?? "-";
-            NakladatelText.Text = string.IsNullOrWhiteSpace(d.Nakladatelstvi) ? "-" : d.Nakladatelstvi;
-            PopisText.Text = string.IsNullOrWhiteSpace(d.PopisKnihy) ? "-" : d.PopisKnihy;
+            NameText.Text = string.IsNullOrWhiteSpace(d.Nazev) ? "-" : d.Nazev;
+            AuthorText.Text = string.IsNullOrWhiteSpace(d.Autor) ? "-" : d.Autor;
+            YearTex.Text = d.Rok?.ToString() ?? "-";
+            NumberOfPagesText.Text = d.PocetStran?.ToString() ?? "-";
+            PublisherText.Text = string.IsNullOrWhiteSpace(d.Nakladatelstvi) ? "-" : d.Nakladatelstvi;
+            DescText.Text = string.IsNullOrWhiteSpace(d.PopisKnihy) ? "-" : d.PopisKnihy;
 
-            // cover image
+            //cover image
             LoadCover(Manager.ToAbsolute(d.KnihyCesta));
 
-            // genres
+            //genres
             try
             {
                 using var conn = new FbConnection(Manager.ConnectionString);
@@ -61,7 +61,7 @@ namespace ukol1
                         : await rdr.GetFieldValueAsync<string>(0));
                 }
 
-                // show "-" if all entries are empty/whitespace
+                //show "-" if all entries are empty/whitespace
                 GenreText.Text = names.Any(s => !string.IsNullOrWhiteSpace(s))
                     ? string.Join(", ", names.Where(s => !string.IsNullOrWhiteSpace(s)))
                     : "-";

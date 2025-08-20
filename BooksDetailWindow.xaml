@@ -1,4 +1,4 @@
-﻿<Window x:Class="ukol1.KnihyDetailWindow"
+﻿<Window x:Class="ukol1.BooksDetailWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -35,7 +35,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- obalka knihy -->
+            <!-- Picture for book -->
             <Border Grid.Row="0" Grid.Column="0"
                     BorderBrush="{StaticResource AccentBrush}"
                     Background="{StaticResource PanelBg}" BorderThickness="2"
@@ -43,12 +43,12 @@
                 <Image x:Name="CoverImage" Stretch="Uniform" />
             </Border>
 
-            <!-- panel s hlavou a metadaty -->
+            <!-- Panel with name and data -->
             <Border Grid.Row="0" Grid.Column="1" Margin="0,0,0,10"
                     Background="{StaticResource AccentBrush}"
                     Padding="10">
                 <StackPanel>
-                    <TextBlock x:Name="NazevText"
+                    <TextBlock x:Name="NameText"
                                FontSize="25" FontWeight="Bold"
                                Foreground="{StaticResource TextOnPanel}"
                                TextWrapping="Wrap" Margin="0,0,0,10" />
@@ -56,19 +56,19 @@
                     <StackPanel>
                         <TextBlock Foreground="{StaticResource TextOnPanel}">
                             <Run Text="Autor: " />
-                            <Run x:Name="AutorText" FontWeight="SemiBold" />
+                            <Run x:Name="AuthorText" FontWeight="SemiBold" />
                         </TextBlock>
 
                         <TextBlock Foreground="{StaticResource TextOnPanel}">
                             <Run Text="Nakladatelství: " />
-                            <Run x:Name="NakladatelText" FontWeight="SemiBold" />
+                            <Run x:Name="PublisherText" FontWeight="SemiBold" />
                         </TextBlock>
 
                         <TextBlock Foreground="{StaticResource TextOnPanel}">
                             <Run Text="Rok vydání: " />
-                            <Run x:Name="RokText" FontWeight="SemiBold" />
+                            <Run x:Name="YearTex" FontWeight="SemiBold" />
                             <Run Text=" | Počet stran: " />
-                            <Run x:Name="PocetStranText" FontWeight="SemiBold" />
+                            <Run x:Name="NumberOfPagesText" FontWeight="SemiBold" />
                         </TextBlock>
 
                         <TextBlock Foreground="{StaticResource TextOnPanel}">
@@ -81,7 +81,7 @@
 
             <GroupBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                       Header="Popis knihy" Background="{StaticResource PanelBg}">
-                <TextBlock x:Name="PopisText"
+                <TextBlock x:Name="DescText"
                            TextWrapping="Wrap"
                            Foreground="{StaticResource TextOnPanel}" />
             </GroupBox>

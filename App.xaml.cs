@@ -9,7 +9,7 @@ namespace ukol1
 {
     public partial class App : Application
     {
-        // handler referenced by EventSetter in App.xaml
+        //handler referenced by EventSetter in App.xaml
         [SuppressMessage("Major Code Smell", "S2325:Make methods that do not access instance data static",
             Justification = "WPF EventSetter in App.xaml expects an instance handler on App")]
         public void MoveCaretToEnd(object sender, KeyboardFocusChangedEventArgs e)
@@ -17,7 +17,7 @@ namespace ukol1
             if (sender is TextBox tb)
             {
                 tb.CaretIndex = tb.Text?.Length ?? 0;
-                tb.SelectionLength = 0; // no selection
+                tb.SelectionLength = 0; //no selection
             }
         }
 
@@ -31,7 +31,7 @@ namespace ukol1
             var batFile = Path.Combine(scriptDir, "run_init_db.bat");
             var sqlFile = Path.Combine(scriptDir, "init_db.sql");
 
-            //kontrola
+            //control existence of scripts and database files
             if (!Directory.Exists(scriptDir))
             {
                 MessageBox.Show($"Scripts folder not found:\n{scriptDir}",
@@ -76,7 +76,7 @@ namespace ukol1
 
                 proc.WaitForExit();
 
-                //kontrola udeleni BD
+                //control exit code and existence of the database file
                 if (proc.ExitCode != 0 || !File.Exists(dbFile))
                 {
                     MessageBox.Show($"Database initialization failed (exit code {proc.ExitCode}).",

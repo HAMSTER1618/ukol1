@@ -29,11 +29,19 @@ namespace ukol1
             }
         }
 
+        //This method is for the save information about the author.
         private void Ok_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(LastName))
             {
                 MessageBox.Show("Pole „Příjmení“ je povinné.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                LastNameBox.Focus();
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(FirstName))
+            {
+                MessageBox.Show("Pole „Jméno“ je povinné.", "Validation",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 LastNameBox.Focus();
                 return;

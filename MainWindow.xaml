@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ukol1"
         mc:Ignorable="d"
-        Title="Knihovna" Height="450" Width="800"
+        Title="Knihovna" Height="450" Width="811"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -19,65 +19,35 @@
             <Setter Property="IsReadOnly" Value="True" />
             <Setter Property="Margin" Value="10" />
         </Style>
-
-        <Style TargetType="Button" x:Key="PrimaryButton">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="Background" Value="#6A3F0E" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Padding" Value="8,4" />
-            <Setter Property="Margin" Value="5" />
-            <Setter Property="Cursor" Value="Hand" />
-
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#82521A" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#54310A" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="Gray" />
-                                <Setter Property="Foreground" Value="#DDD" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <DockPanel>
         <TabControl>
-
+            <!-- BOOKS TAB -->
             <TabItem Header="Knihy">
 
                 <Grid Background="{StaticResource BooksTabBg}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <!--Table-->
+                        <RowDefinition Height="*" />
+                        <!--action-->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
+                    <!--Books grid-->
                     <DataGrid x:Name="TableBooks"
-                              Grid.Row="0" Margin="10,10,10,8"
+                              Grid.Row="0"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               CanUserAddRows="False"
+                              CanUserResizeColumns="False"
+                              CanUserReorderColumns="False"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
                               SelectionChanged="TableBooks_SelectionChanged"
                               PreviewKeyDown="TableBooks_PreviewKeyDown"
-                              ScrollViewer.CanContentScroll="True"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                              EnableRowVirtualization="True"
-                              EnableColumnVirtualization="True">
+                              ScrollViewer.CanContentScroll="False"
+                              EnableColumnVirtualization="True"
+                              EnableRowVirtualization="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="25">
                                 <DataGridTextColumn.ElementStyle>
@@ -100,10 +70,10 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="Autor" Binding="{Binding Autor}" Width="2*" />
-                            <DataGridTextColumn Header="Nakladatelství" Binding="{Binding Nakladatelstvi}" Width="2*" />
+                            <DataGridTextColumn Header="Autor" Binding="{Binding Autor}" Width="150" />
+                            <DataGridTextColumn Header="Nakladatelství" Binding="{Binding Nakladatelstvi}" Width="217" />
 
-                            <DataGridTextColumn Header="Rok" Binding="{Binding Rok}" Width="*">
+                            <DataGridTextColumn Header="Rok" Binding="{Binding Rok}" Width="50">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="TextAlignment" Value="Right" />
@@ -111,7 +81,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Počet stran" Binding="{Binding PocetStran}" Width="*">
+                            <DataGridTextColumn Header="Počet stran" Binding="{Binding PocetStran}" Width="70">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="TextAlignment" Value="Right" />
@@ -119,7 +89,7 @@
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
                         </DataGrid.Columns>
-
+                        <!-- Per-row edit button -->
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem x:Name="CtxEdit" Header="Upravit" />
@@ -127,11 +97,11 @@
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                     </DataGrid>
-
-                    <StackPanel Grid.Row="2"
+                    <!--Action bar-->
+                    <StackPanel Grid.Row="1"
                                 HorizontalAlignment="Center"
                                 Orientation="Horizontal"
-                                Margin="10,0,10,10">
+                                Margin="10,8,10,10">
                         <Button x:Name="BtnAddBook"
                                 Content="Přidat knihu"
                                 Width="100" Margin="5"
@@ -162,7 +132,7 @@
             <TabItem Header="Autori">
                 <Grid Background="{StaticResource AuthoryTabBg}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                         <!-- table -->
                         <RowDefinition Height="Auto" />
                         <!-- action bar -->
@@ -170,49 +140,52 @@
 
                     <!-- Authors grid -->
                     <DataGrid x:Name="TableAuthor"
-                                  Grid.Row="0" Margin="10,10,10,8"
-                                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                  ScrollViewer.CanContentScroll="True"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                AutoGenerateColumns="False"
+                                IsReadOnly="True"
+                                CanUserAddRows="False"
+                                CanUserResizeColumns="False"
+                                CanUserReorderColumns="False"
+                                HorizontalScrollBarVisibility="Auto"
+                                VerticalScrollBarVisibility="Auto"
+                                SelectionChanged="TableBooks_SelectionChanged"
+                                PreviewKeyDown="TableBooks_PreviewKeyDown"
+                                ScrollViewer.CanContentScroll="False"
+                                EnableColumnVirtualization="True"
+                                EnableRowVirtualization="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="30">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right" />
+                                        <Setter Property="TextAlignment" Value="Center" />
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Jméno"    Binding="{Binding JMENO}"    Width="2*" />
-                            <DataGridTextColumn Header="Příjmení" Binding="{Binding PRIJMENI}" Width="2*" />
+                            <DataGridTextColumn Header="Jméno"    Binding="{Binding JMENO}"    Width="291" />
+                            <DataGridTextColumn Header="Příjmení" Binding="{Binding PRIJMENI}" Width="291" />
 
                             <!-- Per-row edit button -->
-                            <DataGridTemplateColumn Header="Akce" Width="100">
+                            <DataGridTemplateColumn Header="Akce" Width="150">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Upravit…" Padding="6,2"
-                                                Click="RowEditAuthorRow_Click"
-                                                Tag="{Binding}"
-                                                Style="{StaticResource PrimaryButton}"
-                                                Foreground="AntiqueWhite"
-                                                Margin="1" />
+                                        <UniformGrid Columns="2" HorizontalAlignment="Stretch" Margin="6,2">
+                                            <Button Content="Upravit"
+                                                    Click="RowEditAuthorRow_Click"
+                                                    Tag="{Binding}"
+                                                    Style="{StaticResource ActionButton}"
+                                                    Foreground="AntiqueWhite"
+                                                    Margin="0,0,6,0" />
+                                            <Button Content="Smazat"
+                                                    Click="RowDeleteAuthorRow_Click"
+                                                    Tag="{Binding}"
+                                                    Style="{StaticResource ActionButton}"
+                                                    Foreground="AntiqueWhite" />
+                                        </UniformGrid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-
-                    <!-- Actions under the grid
-                    <StackPanel Grid.Row="1" Orientation="Horizontal"
-                                HorizontalAlignment="Center" Margin="0,0,0,10" Width="90">
-                        <Button Content="Přidat autor"
-                              Click="AddAuthor_Click"
-                              Style="{StaticResource PrimaryButton}"
-                              Padding="10,4" Margin="0,0,8,0"
-                                Foreground="AntiqueWhite" Height="20" FontSize="14"
-                                Width="90" />
-                    </StackPanel>-->
                 </Grid>
             </TabItem>
 
@@ -220,7 +193,7 @@
             <TabItem Header="Nakladatelství">
                 <Grid Background="{StaticResource PublisherTabBg}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                         <!-- table -->
                         <RowDefinition Height="Auto" />
                         <!-- action bar -->
@@ -228,49 +201,52 @@
 
                     <!-- Publishers grid -->
                     <DataGrid x:Name="TablePubl"
-                              Grid.Row="0" Margin="10,10,10,8"
-                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                              ScrollViewer.CanContentScroll="True"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                              AutoGenerateColumns="False"
+                                IsReadOnly="True"
+                                CanUserAddRows="False"
+                                CanUserResizeColumns="False"
+                                CanUserReorderColumns="False"
+                                HorizontalScrollBarVisibility="Auto"
+                                VerticalScrollBarVisibility="Auto"
+                                SelectionChanged="TableBooks_SelectionChanged"
+                                PreviewKeyDown="TableBooks_PreviewKeyDown"
+                                ScrollViewer.CanContentScroll="False"
+                                EnableColumnVirtualization="True"
+                                EnableRowVirtualization="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding ID}" Width="30">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right" />
+                                        <Setter Property="TextAlignment" Value="Center" />
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Název" Binding="{Binding NAZEV_FIRMY}" Width="2*" />
-                            <DataGridTextColumn Header="Město" Binding="{Binding MESTO}"        Width="2*" />
+                            <DataGridTextColumn Header="Název" Binding="{Binding NAZEV_FIRMY}" Width="291" />
+                            <DataGridTextColumn Header="Město" Binding="{Binding MESTO}"        Width="291" />
 
                             <!-- Per-row edit button -->
-                            <DataGridTemplateColumn Header="Akce" Width="100">
+                            <DataGridTemplateColumn Header="Akce" Width="150">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Upravit…" Padding="6,2"
-                                                Click="RowEditPublisherRow_Click"
-                                                Tag="{Binding}"
-                                                Style="{StaticResource PrimaryButton}"
-                                                Foreground="AntiqueWhite"
-                                                Margin="1" />
+                                        <UniformGrid Columns="2" HorizontalAlignment="Stretch" Margin="6,2">
+                                            <Button Content="Upravit" Padding="6,2"
+                                                    Click="RowEditPublisherRow_Click"
+                                                    Tag="{Binding}"
+                                                    Style="{StaticResource ActionButton}"
+                                                    Foreground="AntiqueWhite"
+                                                    Margin="0,0,6,0" />
+                                            <Button Content="Smazat" Padding="6,2"
+                                                    Click="RowDeletePublisherRow_Click"
+                                                    Tag="{Binding}"
+                                                    Style="{StaticResource ActionButton}"
+                                                    Foreground="AntiqueWhite" />
+                                        </UniformGrid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-
-                    <!-- Actions under the grid
-                    <StackPanel Grid.Row="1" Orientation="Horizontal"
-                                HorizontalAlignment="Center" Margin="10,0,10,10">
-                        <Button Content="Přidat nakladatelství"
-                              Click="AddPublisher_Click"
-                              Style="{StaticResource PrimaryButton}"
-                              Padding="100"
-                              Foreground="AntiqueWhite"
-                              Height="25" Width="135" />
-                    </StackPanel>-->
                 </Grid>
             </TabItem>
         </TabControl>

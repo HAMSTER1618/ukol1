@@ -8,42 +8,6 @@
         Title="KnihyDetailWindowAdd" Height="500" Width="800"
         WindowStartupLocation="CenterScreen">
 
-    <Window.Resources>
-        <Style TargetType="Button" x:Key="PrimaryButton">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="Background" Value="#6A3F0E" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Padding" Value="8,4" />
-            <Setter Property="Margin" Value="5" />
-            <Setter Property="Cursor" Value="Hand" />
-
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                        CornerRadius="4"
-                        SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#82521A" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#54310A" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="Gray" />
-                                <Setter Property="Foreground" Value="#DDD" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
     <Grid Margin="10" Background="#F1E2CD">
 
         <Grid.RowDefinitions>
@@ -89,7 +53,7 @@
                         Grid.ColumnSpan="2"
                         BorderThickness="1"
                         Margin="10,10,10,8">
-                    <TextBox x:Name="NameBooksBox" Margin="0" />
+                    <TextBox x:Name="NameBooksBox" Margin="-1,0,0,-1" />
                 </Border>
 
                 <!-- Nakladatelstvi -->
@@ -97,8 +61,8 @@
                         VerticalAlignment="Top" Margin="5,13,5,0"
                            FontSize="14" Height="18" />
                 <TextBox   x:Name="PublBox"      Grid.Row="1"
-                           Grid.Column="1" Margin="10,13,10,27"
-                           Grid.ColumnSpan="2" />
+                           Grid.Column="1" Margin="10,0,10,29"
+                           Grid.ColumnSpan="2" Height="20" VerticalAlignment="Bottom" />
                 <TextBlock Grid.Row="1" Grid.Column="1"
                            Text="Název, město (např.: Albatros, Praha)"
                            VerticalAlignment="Top"
@@ -163,7 +127,7 @@
                              FontSize="14" />
                 </Border>
                 <Popup x:Name="StranErrPopup"
-                       PlacementTarget="{Binding ElementName=PocetStranBox}"
+                       PlacementTarget="{Binding ElementName=NumberOfPagesBox}"
                        Placement="Bottom"
                        StaysOpen="True"
                        AllowsTransparency="True"
@@ -173,7 +137,7 @@
                             BorderBrush="#FFCC0000"
                             BorderThickness="2"
                             Padding="6"
-                            Width="{Binding ElementName=PocetStranBox, Path=ActualWidth}">
+                            Width="{Binding ElementName=NumberOfPagesBox, Path=ActualWidth}">
                         <TextBlock x:Name="StranErrText"
                            Text="Lze zadat pouze číslice."
                            TextWrapping="Wrap"

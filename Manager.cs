@@ -114,7 +114,7 @@ namespace ukol1
         public static Task DeleteBookCascadeAsync(int bookID)
             => DeleteBookCascadeAsync(_connString, bookID, ToAbsolute);
 
-        // ---------------- Book details (sync/async) ----------------
+        // ---------------- Book details (async) ----------------
         //Loads book details by id (async)
         public static async Task<BookDetails?> GetBookDetailsAsync(string connStr, int id)
         {
@@ -201,23 +201,58 @@ namespace ukol1
         }
 
         //Inserts a new book or updates an existing one. Also upserts details and genres,
-        //maintains author/publisher references, and deletes an outdated cover file if needed.
+
+        //Insert new author and return its ID
+        public static async Task<int> InsertAuthorAsync(string surname, string name, CancellationToken ct = default)
+        {
+            await using var conn = new FbConnection(_connString);
+            await conn.OpenAsync(ct);
+
+            const string sql = @"INSERT INTO AUTORY(PRIJMENI, JMENO)
+                                 VALUES (@p, @j)
+                                 RETURNING ID";
+
+            await using var cmd = new FbCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@p", surname);
+            cmd.Parameters.AddWithValue("@j", name);
+
+            var obj = await cmd.ExecuteScalarAsync(ct);
+            return Convert.ToInt32(obj);
+        }
+
+        //Insert new publisher (name + city) and return its ID
+        public static async Task<int> InsertPublisherAsync(string nameFirm, string city, CancellationToken ct = default)
+        {
+            await using var conn = new FbConnection(_connString);
+            await conn.OpenAsync(ct);
+
+            const string sql = @"INSERT INTO NAKLADATELSTVI(NAZEV_FIRMY, MESTO)
+                                 VALUES (@n, @m)
+                                 RETURNING ID";
+
+            await using var cmd = new FbCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@n", nameFirm);
+            cmd.Parameters.AddWithValue("@m", city);
+
+            var obj = await cmd.ExecuteScalarAsync(ct);
+            return Convert.ToInt32(obj);
+        }
 
         public static async Task<int> SaveOrUpdateBookAsync(
-    string connStr,
-    int? bookID,
-    string name,
-    string? authorName,
-    string? authorSurname,
-    string? publName,
-    string? publCity,
-    int? year,
-    int? numberOfPages,
-    string? descr,
-    string? selectedFilePath,
-    Func<string, int, string> storeCoverFile,
-    Func<string?, string?> toAbsolutePath,
-    string? genresCsv)
+                                            string connStr,
+            int? bookID,
+            string name,
+            string? authorName,
+            string? authorSurname,
+            string? publName,
+            string? publCity,
+            int? year,
+            int? numberOfPages,
+            string? descr,
+            string? selectedFilePath,
+            Func<string, int, string> storeCoverFile,
+            Func<string?, string?> toAbsolutePath,
+            string? genresCsv)
         {
             using var conn = new FbConnection(connStr);
             await conn.OpenAsync().ConfigureAwait(false);
@@ -244,8 +279,8 @@ namespace ukol1
                                  .ConfigureAwait(false);
 
                 await Db.NonQueryAsync(conn, tx, @"
-            INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN)
-            VALUES (@id, @nazev, @rok, @aid, @nid, @ps)",
+                    INSERT INTO KNIHY (ID, NAZEV, ROK, AUTOR_ID, NAKLADATELSTVI_ID, POCET_STRAN)
+                    VALUES (@id, @nazev, @rok, @aid, @nid, @ps)",
                     ("id", bookId), ("nazev", name), ("rok", year),
                     ("aid", authorId), ("nid", publisherID), ("ps", numberOfPages)).ConfigureAwait(false);
             }
@@ -256,11 +291,11 @@ namespace ukol1
 
                 // update book core fields
                 await Db.NonQueryAsync(conn, tx, @"
-            UPDATE KNIHY SET
-              NAZEV=@nazev,
-              ROK=@rok,
-              POCET_STRAN=@ps
-            WHERE ID=@id",
+                    UPDATE KNIHY SET
+                      NAZEV=@nazev,
+                      ROK=@rok,
+                      POCET_STRAN=@ps
+                    WHERE ID=@id",
                     ("id", bookId), ("nazev", name), ("rok", year), ("ps", numberOfPages)).ConfigureAwait(false);
 
                 // get current FKs
@@ -317,7 +352,6 @@ namespace ukol1
             await UpsertDetailsAsync(conn, tx, bookId, descr, newRelPath).ConfigureAwait(false);
             await SetGenresAsync(conn, tx, bookId, genresCsv).ConfigureAwait(false);
 
-            // IMPORTANT: no orphan deletion on edit anymore
             await tx.CommitAsync().ConfigureAwait(false);
 
             if (!string.IsNullOrWhiteSpace(oldAbsToDelete) && File.Exists(oldAbsToDelete))
@@ -356,6 +390,46 @@ namespace ukol1
             return Path.IsPathRooted(dbPath)
                 ? dbPath
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dbPath);
+        }
+
+        // --- AUTHORS ---
+        public static async Task UpdateAuthorAsync(int id, string surname, string name)
+        {
+            // normalize inputs
+            var sr = (surname ?? string.Empty).Trim();
+            var nm = (name ?? string.Empty).Trim();
+
+            using var conn = new FbConnection(_connString);
+            await conn.OpenAsync().ConfigureAwait(false);
+
+            using var cmd = new FbCommand(
+                "UPDATE AUTORY SET PRIJMENI=@p, JMENO=@j WHERE ID=@id", conn);
+
+            // keep parameter names consistent with the rest of the project
+            cmd.Parameters.AddWithValue("p", sr);
+            cmd.Parameters.AddWithValue("j", nm);
+            cmd.Parameters.AddWithValue("id", id);
+
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        }
+
+        // --- PUBLISHERS ---
+        public static async Task UpdatePublisherAsync(int id, string name, string city)
+        {
+            // normalize inputs
+            var n = (name ?? string.Empty).Trim();
+            var c = (city ?? string.Empty).Trim();
+
+            using var conn = new FbConnection(_connString);
+            await conn.OpenAsync().ConfigureAwait(false);
+
+            using var cmd = new FbCommand(
+                "UPDATE NAKLADATELSTVI SET NAZEV_FIRMY=@n, MESTO=@m WHERE ID=@id", conn);
+            // keep parameter names consistent with the rest of the project
+            cmd.Parameters.AddWithValue("n", n);
+            cmd.Parameters.AddWithValue("m", c);
+            cmd.Parameters.AddWithValue("id", id);
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
         private static FbConnection CreateConnection() => new FbConnection(_connString);

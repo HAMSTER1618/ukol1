@@ -1,0 +1,35 @@
+﻿<Window x:Class="ukol1.AuthorEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Upravit autora" SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Border Background="Beige" Padding="16" CornerRadius="8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="260" />
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Row="0" Grid.Column="0" Content="Příjmení:" Style="{StaticResource DialogLabel}" />
+            <TextBox x:Name="LastNameBox" Grid.Row="0" Grid.Column="1" Style="{StaticResource DialogTextBox}" />
+
+            <Label Grid.Row="1" Grid.Column="0" Content="Jméno:" Style="{StaticResource DialogLabel}" />
+            <TextBox x:Name="FirstNameBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource DialogTextBox}" />
+
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal"
+                  HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Cancel" IsCancel="True"
+                        Style="{StaticResource PrimaryButton}"
+                        Width="50" />
+                <Button Content="OK" IsDefault="True" Click="Ok_Click"
+                        Style="{StaticResource PrimaryButton}"
+                        Width="50" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

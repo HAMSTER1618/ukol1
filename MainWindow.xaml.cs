@@ -5,6 +5,7 @@ using System.Windows.Documents;   // Hyperlink
 using System.Windows.Input;
 using FirebirdSql.Data.FirebirdClient;
 using static ukol1.Manager;
+using Microsoft.VisualBasic;
 
 namespace ukol1
 {
@@ -30,10 +31,9 @@ namespace ukol1
             CtxDelete.Click += async (s, e) => await DeleteSelectedAsync();
         }
 
-        /// <summary>
-        /// Generic helper: run SELECT -> DataView off the UI thread
-        /// so the window stays responsive.
-        /// </summary>
+        //Generic helper: run SELECT -> DataView off the UI thread
+        //so the window stays responsive.
+
         private static Task<DataView> LoadDataViewAsync(string sql)
         {
             return Task.Run(() =>
@@ -48,6 +48,18 @@ namespace ukol1
             });
         }
 
+        // Add new Author
+        /*private async void AddAuthor_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new AuthorEditWindow { Owner = this };
+            if (dlg.ShowDialog() == true)
+            {
+                await Manager.InsertAuthorAsync(dlg.LastName, dlg.FirstName);
+                await ReloadAllTableAsync();
+            }
+        }*/
+
+        //Add new Book
         private async void AddBook_Click(object sender, RoutedEventArgs e)
         {
             var win = new KnihyDetailWindowAdd { Owner = this };
@@ -55,15 +67,22 @@ namespace ukol1
                 await ReloadAllTableAsync();
         }
 
-        /// <summary>
-        /// Toolbar delete button – just forwards to the common delete routine.
-        /// </summary>
+        // Add new Publisher
+        /*private async void AddPublisher_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new PublisherEditWindow { Owner = this };
+            if (dlg.ShowDialog() == true)
+            {
+                await Manager.InsertPublisherAsync(dlg.PublisherName, dlg.City);
+                await ReloadAllTableAsync();
+            }
+        }*/
+
         private async void DeleteBook_Click(object sender, RoutedEventArgs e) => await DeleteSelectedAsync();
 
-        /// <summary>
-        /// Delete the selected book (after confirmation) and reload all tables.
-        /// Works both for DataRowView and strongly-typed BookRow.
-        /// </summary>
+        //Delete the selected book (after confirmation) and reload all tables.
+        //Works both for DataRowView and strongly-typed BookRow.
+
         private async Task DeleteSelectedAsync()
         {
             var id = GetSelectedBookID();
@@ -89,14 +108,12 @@ namespace ukol1
             await ReloadAllTableAsync();
         }
 
-        /// <summary>
-        /// Toolbar edit button – open dialog for the selected book; then reload.
-        /// </summary>
+        //Toolbar edit button – open dialog for the selected book; then reload.
+
         private async void EditBook_Click(object sender, RoutedEventArgs e) => await EditSelectedAsync();
 
-        /// <summary>
-        /// Open edit dialog for the selected book; after closing, reload data.
-        /// </summary>
+        //Open edit dialog for the selected book; after closing, reload data.
+
         private async Task EditSelectedAsync()
         {
             var id = GetSelectedBookID();
@@ -107,9 +124,8 @@ namespace ukol1
                 await ReloadAllTableAsync();
         }
 
-        /// <summary>
-        /// Get ID of the currently selected book (supports DataRowView and BookRow).
-        /// </summary>
+        //Get ID of the currently selected book (supports DataRowView and BookRow).
+
         private int? GetSelectedBookID()
         {
             var item = TableBooks.SelectedItem;
@@ -144,9 +160,8 @@ namespace ukol1
             await ReloadAllTableAsync();
         }
 
-        /// <summary>
-        /// Open details for the currently selected row (re-entrancy-safe).
-        /// </summary>
+        // Open details for the currently selected row (re-entrancy-safe).
+
         private async Task OpenDetailsForSelected()
         {
             var id = GetSelectedBookID();
@@ -165,9 +180,8 @@ namespace ukol1
             }
         }
 
-        /// <summary>
-        /// Reload books, authors and publishers into their grids.
-        /// </summary>
+        //Reload books, authors and publishers into their grids.
+
         private async Task ReloadAllTableAsync()
         {
             _isReloading = true;
@@ -194,9 +208,55 @@ namespace ukol1
             }
         }
 
-        /// <summary>
-        /// Left-click on a row: open details.
-        /// </summary>
+        // Edit Author row
+        private async void RowEditAuthorRow_Click(object sender, RoutedEventArgs e)
+        {
+            var drv = (sender as FrameworkElement)?.Tag as DataRowView
+                      ?? TableAuthor.SelectedItem as DataRowView;
+            if (drv == null) return;
+
+            var id = Convert.ToInt32(drv["ID"]);
+            var last = drv.Row.Table.Columns.Contains("PRIJMENI") ? drv["PRIJMENI"]?.ToString() ?? "" : "";
+            var first = drv.Row.Table.Columns.Contains("JMENO") ? drv["JMENO"]?.ToString() ?? "" : "";
+
+            var dlg = new AuthorEditWindow(last, first) { Owner = this };
+            if (dlg.ShowDialog() == true)
+            {
+                await Manager.UpdateAuthorAsync(id, dlg.LastName, dlg.FirstName);
+                await ReloadAllTableAsync();
+            }
+        }
+
+        // Left-click on a row: open details.
+        private async void RowEditBook_Click(object sender, RoutedEventArgs e)
+        {
+            var rowItem = (sender as FrameworkElement)?.Tag;
+            if (rowItem == null) return;
+
+            // temporarily select that row and reuse existing logic
+            TableBooks.SelectedItem = rowItem;
+            await EditSelectedAsync();
+        }
+
+        // Edit Publisher row (name + city)
+        private async void RowEditPublisherRow_Click(object sender, RoutedEventArgs e)
+        {
+            var drv = (sender as FrameworkElement)?.Tag as DataRowView
+                      ?? TablePubl.SelectedItem as DataRowView;
+            if (drv == null) return;
+
+            var id = Convert.ToInt32(drv["ID"]);
+            var name = drv.Row.Table.Columns.Contains("NAZEV_FIRMY") ? drv["NAZEV_FIRMY"]?.ToString() ?? "" : "";
+            var city = drv.Row.Table.Columns.Contains("MESTO") ? drv["MESTO"]?.ToString() ?? "" : "";
+
+            var dlg = new PublisherEditWindow(name, city) { Owner = this };
+            if (dlg.ShowDialog() == true)
+            {
+                await Manager.UpdatePublisherAsync(id, dlg.PublisherName, dlg.City);
+                await ReloadAllTableAsync();
+            }
+        }
+
         private async void TableBooks_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_isReloading || _openingDetails) return;

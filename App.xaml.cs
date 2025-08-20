@@ -1,14 +1,26 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
-using System;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ukol1
 {
     public partial class App : Application
     {
+        // handler referenced by EventSetter in App.xaml
+        [SuppressMessage("Major Code Smell", "S2325:Make methods that do not access instance data static",
+            Justification = "WPF EventSetter in App.xaml expects an instance handler on App")]
+        public void MoveCaretToEnd(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                tb.CaretIndex = tb.Text?.Length ?? 0;
+                tb.SelectionLength = 0; // no selection
+            }
+        }
+
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
